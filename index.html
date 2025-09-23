@@ -3,148 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fast Image Blur UPSKK</title>
+    <title>Aplikasi Pengeblur Wajah</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-        .container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        #controls {
-            margin-top: 1rem;
-        }
-        #controls button {
-            margin: 0.5rem;
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-        }
-        canvas {
-            border: 1px solid #ccc;
-            margin-top: 1rem;
-            max-width: 100%;
-            height: auto;
-        }
+        canvas { border: 1px solid black; }
+        input, button { margin: 10px; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@1.0.0/dist/face-api.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h2>Aplikasi Pengeblur Wajah</h2>
-        <input type="file" id="imageInput" accept="image/*">
-        <div id="controls">
-            <button id="blurButton" disabled>Blurkan Wajah</button>
-            <a id="downloadLink" download="gambar-diburamkan.png" style="display: none;">
-                <button id="downloadButton">Unduh Gambar</button>
-            </a>
-        </div>
-        <canvas id="canvas"></canvas>
-    </div>
- 
+    <h1>Blurkan Wajah</h1>
+    <input type="file" id="imageUpload" accept="image/*">
+    <button onclick="blurFaces()">Blurkan Wajah</button>
+    <button onclick="downloadImage()">Unduh Gambar</button>
+    <canvas id="canvas"></canvas>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const imageInput = document.getElementById('imageInput');
-            const blurButton = document.getElementById('blurButton');
-            const downloadButton = document.getElementById('downloadButton');
-            const downloadLink = document.getElementById('downloadLink');
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
- 
-            let img = new Image();
-            let modelsLoaded = false;
- 
-            async function loadFaceModels() {
-                const MODEL_URL = 'https://cdn.jsdelivr.net/gh/jimswk/faceblursites@main/models';
-                try {
-                    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-                    modelsLoaded = true;
-                    blurButton.disabled = false;
-                    console.log('Semua model wajah berjaya dimuatkan.');
-                } catch (error) {
-                    console.error('Gagal memuatkan model wajah:', error);
-                    alert('Gagal muat model wajah. Sila semak sambungan internet dan URL model.');
-                }
+        async function loadFaceModels() {
+            if (typeof faceapi === 'undefined') {
+                console.error('faceapi is not defined. Ensure face-api.js is loaded.');
+                return;
             }
- 
-            imageInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        img.src = event.target.result;
-                        img.onload = () => {
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            ctx.drawImage(img, 0, 0);
-                            if (modelsLoaded) {
-                                blurButton.disabled = false;
-                            }
-                            downloadLink.style.display = 'none';
-                        };
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
- 
-            blurButton.addEventListener('click', async () => {
-                if (!img.src) {
-                    alert('Silakan pilih gambar terlebih dahulu.');
-                    return;
-                }
- 
-                blurButton.disabled = true;
-                blurButton.innerText = 'Menganalisis...';
- 
-                const detections = await faceapi.detectAllFaces(img);
- 
-                if (detections.length === 0) {
-                    alert('Tidak ada wajah terdeteksi pada gambar ini.');
-                } else {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0);
- 
-                    detections.forEach(detection => {
-                        const box = detection.box;
-                        const faceRegion = ctx.getImageData(box.x, box.y, box.width, box.height);
-                        const radius = 20;
- 
-                        for (let y = 0; y < box.height; y += radius) {
-                            for (let x = 0; x < box.width; x += radius) {
-                                const pixelData = faceRegion.data.slice((y * box.width + x) * 4, ((y * box.width + x) + 1) * 4);
-                                ctx.fillStyle = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`;
-                                ctx.fillRect(box.x + x, box.y + y, radius, radius);
-                            }
-                        }
-                    });
-                    downloadLink.style.display = 'block';
-                }
- 
-                blurButton.disabled = false;
-                blurButton.innerText = 'Blurkan Wajah';
-            });
- 
-            downloadButton.addEventListener('click', () => {
-                const dataURL = canvas.toDataURL('image/png');
-                downloadLink.href = dataURL;
-            });
- 
-            loadFaceModels();
+            try {
+                await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+                console.log('Models loaded successfully');
+            } catch (error) {
+                console.error('Error loading models:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadFaceModels();
+            // Add other initialization code here
         });
+
+        async function blurFaces() {
+            const input = document.getElementById('imageUpload').files[0];
+            if (!input) {
+                alert('Please upload an image');
+                return;
+            }
+            const img = await faceapi.bufferToImage(input);
+            const canvas = document.getElementById('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+
+            const detections = await faceapi.detectAllFaces(img).withFaceLandmarks();
+            detections.forEach(detection => {
+                const box = detection.detection.box;
+                ctx.filter = 'blur(10px)';
+                ctx.fillRect(box.x, box.y, box.width, box.height);
+            });
+        }
+
+        function downloadImage() {
+            const canvas = document.getElementById('canvas');
+            const link = document.createElement('a');
+            link.download = 'blurred_image.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
     </script>
 </body>
 </html>
