@@ -87,27 +87,17 @@
 
                 // Proses setiap wajah yang terdeteksi
                 detections.forEach(detection => {
-                    const landmarks = detection.landmarks;
-                    const jawOutline = landmarks.getJawOutline(); // Titik-titik garis rahang
+                    // Gunakan kotak deteksi (bounding box) untuk seluruh wajah
+                    const box = detection.detection.box;
 
                     // Simpan state kanvas
                     ctx.save();
 
-                    // Buat jalur kliping berdasarkan garis rahang
-                    ctx.beginPath();
-                    jawOutline.forEach((point, index) => {
-                        if (index === 0) {
-                            ctx.moveTo(point.x, point.y);
-                        } else {
-                            ctx.lineTo(point.x, point.y);
-                        }
-                    });
-                    ctx.closePath();
-                    ctx.clip(); // Batasi area gambar ke jalur kliping
-
                     // Terapkan blur pada area wajah
-                    ctx.filter = 'blur(10px)';
-                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    ctx.filter = 'blur(15px)'; // Tingkatkan nilai blur untuk hasil yang lebih baik
+                    
+                    // Gambar bagian wajah yang diburamkan menggunakan koordinat kotak deteksi
+                    ctx.drawImage(img, box.x, box.y, box.width, box.height, box.x, box.y, box.width, box.height);
 
                     // Pulihkan state kanvas
                     ctx.restore();
