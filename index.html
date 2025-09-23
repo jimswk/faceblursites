@@ -45,8 +45,8 @@
         async function loadFaceModels() {
             try {
                 // Gunakan model dari CDN untuk deteksi wajah dan landmark
-                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models/');
-                await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models/');
+                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://jimswk.github.io/faceblursites/models/');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://jimswk.github.io/faceblursites/models/');
                 console.log('Model wajah berhasil dimuat');
             } catch (error) {
                 console.error('Gagal memuat model wajah:', error);
