@@ -15,6 +15,7 @@
             border: 1px solid black;
             max-width: 100%;
             height: auto;
+            cursor: crosshair; /* Mengubah kursor menjadi tanda plus */
         }
         input, button {
             margin: 10px;
@@ -34,14 +35,17 @@
 </head>
 <body>
     <h1>Blurkan Wajah</h1>
+    <p>Klik pada wajah yang ingin Anda buramkan secara manual.</p>
     <input type="file" id="imageUpload" accept="image/*">
     <br>
-    <button onclick="blurFaces()">Blurkan Wajah</button>
-    <button onclick="downloadImage()">Muat turun Gambar</button>
+    <button onclick="autoBlur()">Blurkan Otomatis</button>
+    <button onclick="downloadImage()">Unduh Gambar</button>
     <br>
     <canvas id="canvas"></canvas>
 
     <script>
+        let currentImage; // Variabel untuk menyimpan gambar yang diunggah
+
         async function loadFaceModels() {
             try {
                 await faceapi.nets.ssdMobilenetv1.loadFromUri('https://jimswk.github.io/faceblursites/models/');
@@ -60,25 +64,38 @@
                 return;
             }
             await loadFaceModels();
+            
+            const imageUpload = document.getElementById('imageUpload');
+            imageUpload.addEventListener('change', handleImageUpload);
         });
 
-        async function blurFaces() {
-            const input = document.getElementById('imageUpload').files[0];
-            if (!input) {
+        async function handleImageUpload(event) {
+            const input = event.target.files[0];
+            if (!input) return;
+            
+            currentImage = await faceapi.bufferToImage(input);
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            ctx.drawImage(currentImage, 0, 0);
+        }
+
+        async function autoBlur() {
+            if (!currentImage) {
                 alert('Silakan unggah gambar terlebih dahulu.');
                 return;
             }
+            
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            
+            // Gambar ulang gambar asli untuk memulai dari awal
+            ctx.drawImage(currentImage, 0, 0);
 
             try {
-                const img = await faceapi.bufferToImage(input);
-                const canvas = document.getElementById('canvas');
-                const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-
-                const detections = await faceapi.detectAllFaces(img)
+                const detections = await faceapi.detectAllFaces(currentImage)
                     .withFaceLandmarks();
 
                 detections.forEach(detection => {
@@ -88,10 +105,7 @@
                     
                     const centerX = box.x + box.width / 2;
                     const centerY = box.y + box.height / 2;
-                    
-                    // Radius horizontal (lebar) diperlebar
-                    const radiusX = box.width / 2 * 1.1; // Nilai 1.1 dapat disesuaikan
-                    // Radius vertikal (tinggi) diperlebar sedikit
+                    const radiusX = box.width / 2 * 1.1;
                     const radiusY = box.height / 2 * 1.3;
 
                     ctx.beginPath();
@@ -99,7 +113,7 @@
                     ctx.clip();
 
                     ctx.filter = 'blur(20px)';
-                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
                     
                     ctx.restore();
                 });
@@ -108,6 +122,39 @@
                 alert('Gagal memproses gambar. Periksa konsol untuk detail.');
             }
         }
+        
+        // Fungsi untuk memburamkan secara manual
+        const canvas = document.getElementById('canvas');
+        canvas.addEventListener('click', (event) => {
+            if (!currentImage) {
+                alert('Silakan unggah gambar terlebih dahulu.');
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const clickX = (event.clientX - rect.left) * scaleX;
+            const clickY = (event.clientY - rect.top) * scaleY;
+            
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            
+            ctx.save();
+            
+            // Definisikan ukuran oval manual. Nilai ini bisa disesuaikan.
+            const manualRadiusX = 50; 
+            const manualRadiusY = 65; 
+
+            ctx.beginPath();
+            ctx.ellipse(clickX, clickY, manualRadiusX, manualRadiusY, 0, 0, 2 * Math.PI);
+            ctx.clip();
+
+            ctx.filter = 'blur(20px)';
+            ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
+            
+            ctx.restore();
+        });
 
         function downloadImage() {
             const canvas = document.getElementById('canvas');
