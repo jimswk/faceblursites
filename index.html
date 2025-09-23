@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Pengeblur Wajah</title>
+    <title>Fast Face Blur UPSKK</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
         body {
@@ -35,11 +35,11 @@
 </head>
 <body>
     <h1>Blurkan Wajah</h1>
-    <p>Klik pada wajah yang ingin Anda buramkan secara manual.</p>
+    <p>Klik pada wajah yang ingin Anda Blur secara manual.</p>
     <input type="file" id="imageUpload" accept="image/*">
     <br>
-    <button onclick="autoBlur()">Blurkan Otomatis</button>
-    <button onclick="downloadImage()">Unduh Gambar</button>
+    <button onclick="autoBlur()">Blurkan Automatik</button>
+    <button onclick="downloadImage()">Muatturun Gambar</button>
     <br>
     <canvas id="canvas"></canvas>
 
@@ -143,8 +143,8 @@
             ctx.save();
             
             // Definisikan ukuran oval manual. Nilai ini bisa disesuaikan.
-            const manualRadiusX = 50; 
-            const manualRadiusY = 65; 
+            const manualRadiusX = 40; 
+            const manualRadiusY = 55; 
 
             ctx.beginPath();
             ctx.ellipse(clickX, clickY, manualRadiusX, manualRadiusY, 0, 0, 2 * Math.PI);
