@@ -56,96 +56,97 @@
         <canvas id="canvas"></canvas>
     </div>
  
-<script>
-    const imageInput = document.getElementById('imageInput');
-    const blurButton = document.getElementById('blurButton');
-    const downloadButton = document.getElementById('downloadButton');
-    const downloadLink = document.getElementById('downloadLink');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const imageInput = document.getElementById('imageInput');
+            const blurButton = document.getElementById('blurButton');
+            const downloadButton = document.getElementById('downloadButton');
+            const downloadLink = document.getElementById('downloadLink');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
  
-    let img = new Image();
-    let modelsLoaded = false;
+            let img = new Image();
+            let modelsLoaded = false;
  
-    // Nama fungsi yang benar
-    async function loadFaceModels() {
-        const MODEL_URL = 'https://cdn.jsdelivr.net/gh/jimswk/faceblursites@main/models';
-        try {
-            await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-            modelsLoaded = true;
-            blurButton.disabled = false; // Aktifkan butang setelah model dimuat
-            console.log('Semua model wajah berjaya dimuatkan.');
-        } catch (error) {
-            console.error('Gagal memuatkan model wajah:', error);
-            // Anda perlu mendefinisikan fungsi showStatusMessage() atau menggantinya
-            alert('Gagal muat model wajah. Sila semak sambungan internet dan URL model.');
-        }
-    }
+            // Fungsi untuk memuat model AI
+            async function loadFaceModels() {
+                const MODEL_URL = 'https://cdn.jsdelivr.net/gh/jimswk/faceblursites@main/models';
+                try {
+                    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+                    modelsLoaded = true;
+                    blurButton.disabled = false;
+                    console.log('Semua model wajah berjaya dimuatkan.');
+                } catch (error) {
+                    console.error('Gagal memuatkan model wajah:', error);
+                    alert('Gagal muat model wajah. Pastikan URL model sudah betul.');
+                }
+            }
  
-    imageInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                img.src = event.target.result;
-                img.onload = () => {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    if (modelsLoaded) {
-                        blurButton.disabled = false;
-                    }
-                    downloadLink.style.display = 'none';
-                };
-            };
-            reader.readAsDataURL(file);
-        }
-    });
- 
-    blurButton.addEventListener('click', async () => {
-        if (!img.src) {
-            alert('Silakan pilih gambar terlebih dahulu.');
-            return;
-        }
- 
-        blurButton.disabled = true;
-        blurButton.innerText = 'Menganalisis...';
- 
-        const detections = await faceapi.detectAllFaces(img);
- 
-        if (detections.length === 0) {
-            alert('Tidak ada wajah terdeteksi pada gambar ini.');
-        } else {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
- 
-            detections.forEach(detection => {
-                const box = detection.box;
-                const faceRegion = ctx.getImageData(box.x, box.y, box.width, box.height);
-                const radius = 20;
- 
-                for (let y = 0; y < box.height; y += radius) {
-                    for (let x = 0; x < box.width; x += radius) {
-                        const pixelData = faceRegion.data.slice((y * box.width + x) * 4, ((y * box.width + x) + 1) * 4);
-                        ctx.fillStyle = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`;
-                        ctx.fillRect(box.x + x, box.y + y, radius, radius);
-                    }
+            imageInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        img.src = event.target.result;
+                        img.onload = () => {
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
+                            if (modelsLoaded) {
+                                blurButton.disabled = false;
+                            }
+                            downloadLink.style.display = 'none';
+                        };
+                    };
+                    reader.readAsDataURL(file);
                 }
             });
-            downloadLink.style.display = 'block';
-        }
  
-        blurButton.disabled = false;
-        blurButton.innerText = 'Blurkan Wajah';
-    });
+            blurButton.addEventListener('click', async () => {
+                if (!img.src) {
+                    alert('Silakan pilih gambar terlebih dahulu.');
+                    return;
+                }
  
-    downloadButton.addEventListener('click', () => {
-        const dataURL = canvas.toDataURL('image/png');
-        downloadLink.href = dataURL;
-    });
+                blurButton.disabled = true;
+                blurButton.innerText = 'Menganalisis...';
  
-    // Ubah panggilan fungsi dari loadModels() menjadi loadFaceModels()
-    loadFaceModels();
-</script>
+                const detections = await faceapi.detectAllFaces(img);
+ 
+                if (detections.length === 0) {
+                    alert('Tidak ada wajah terdeteksi pada gambar ini.');
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+ 
+                    detections.forEach(detection => {
+                        const box = detection.box;
+                        const faceRegion = ctx.getImageData(box.x, box.y, box.width, box.height);
+                        const radius = 20;
+ 
+                        for (let y = 0; y < box.height; y += radius) {
+                            for (let x = 0; x < box.width; x += radius) {
+                                const pixelData = faceRegion.data.slice((y * box.width + x) * 4, ((y * box.width + x) + 1) * 4);
+                                ctx.fillStyle = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`;
+                                ctx.fillRect(box.x + x, box.y + y, radius, radius);
+                            }
+                        }
+                    });
+                    downloadLink.style.display = 'block';
+                }
+ 
+                blurButton.disabled = false;
+                blurButton.innerText = 'Blurkan Wajah';
+            });
+ 
+            downloadButton.addEventListener('click', () => {
+                const dataURL = canvas.toDataURL('image/png');
+                downloadLink.href = dataURL;
+            });
+ 
+            // Panggil fungsi muat model di sini, di dalam event listener
+            loadFaceModels();
+        });
+    </script>
 </body>
 </html>
