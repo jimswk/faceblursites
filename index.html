@@ -42,19 +42,6 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@1.0.0/dist/face-api.min.js"></script>
-</head>
-<body>
-    <div class="container">
-        <h2>Aplikasi Pengeblur Wajah</h2>
-        <input type="file" id="imageInput" accept="image/*">
-        <div id="controls">
-            <button id="blurButton" disabled>Blurkan Wajah</button>
-            <a id="downloadLink" download="gambar-diburamkan.png" style="display: none;">
-                <button id="downloadButton">Unduh Gambar</button>
-            </a>
-        </div>
-        <canvas id="canvas"></canvas>
-    </div>
  
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -68,7 +55,6 @@
             let img = new Image();
             let modelsLoaded = false;
  
-            // Fungsi untuk memuat model AI
             async function loadFaceModels() {
                 const MODEL_URL = 'https://cdn.jsdelivr.net/gh/jimswk/faceblursites@main/models';
                 try {
@@ -78,7 +64,7 @@
                     console.log('Semua model wajah berjaya dimuatkan.');
                 } catch (error) {
                     console.error('Gagal memuatkan model wajah:', error);
-                    alert('Gagal muat model wajah. Pastikan URL model sudah betul.');
+                    alert('Gagal muat model wajah. Sila semak sambungan internet dan URL model.');
                 }
             }
  
@@ -144,7 +130,6 @@
                 downloadLink.href = dataURL;
             });
  
-            // Panggil fungsi muat model di sini, di dalam event listener
             loadFaceModels();
         });
     </script>
