@@ -6,63 +6,106 @@
     <title>Aplikasi Pengeblur Wajah</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
-        canvas { border: 1px solid black; }
-        input, button { margin: 10px; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        canvas {
+            border: 1px solid black;
+            max-width: 100%;
+            height: auto;
+        }
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
     <h1>Blurkan Wajah</h1>
     <input type="file" id="imageUpload" accept="image/*">
+    <br>
     <button onclick="blurFaces()">Blurkan Wajah</button>
     <button onclick="downloadImage()">Unduh Gambar</button>
+    <br>
     <canvas id="canvas"></canvas>
 
     <script>
         async function loadFaceModels() {
-            if (typeof faceapi === 'undefined') {
-                console.error('faceapi is not defined. Ensure face-api.js is loaded.');
-                return;
-            }
             try {
-                await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
-                await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-                console.log('Models loaded successfully');
+                // Ganti '/models' dengan path ke model Anda jika di-host lokal
+                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://jimswk.github.io/faceblursites/models/');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://jimswk.github.io/faceblursites/models/');
+                console.log('Model wajah berhasil dimuat');
             } catch (error) {
-                console.error('Error loading models:', error);
+                console.error('Gagal memuat model wajah:', error);
+                alert('Gagal memuat model wajah. Periksa konsol untuk detail.');
             }
         }
 
+        // Muat model saat halaman dimuat
         document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof faceapi === 'undefined') {
+                console.error('faceapi tidak didefinisikan. Pastikan face-api.js dimuat.');
+                alert('Pustaka face-api.js gagal dimuat.');
+                return;
+            }
             await loadFaceModels();
-            // Add other initialization code here
         });
 
         async function blurFaces() {
             const input = document.getElementById('imageUpload').files[0];
             if (!input) {
-                alert('Please upload an image');
+                alert('Silakan unggah gambar terlebih dahulu.');
                 return;
             }
-            const img = await faceapi.bufferToImage(input);
-            const canvas = document.getElementById('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
 
-            const detections = await faceapi.detectAllFaces(img).withFaceLandmarks();
-            detections.forEach(detection => {
-                const box = detection.detection.box;
-                ctx.filter = 'blur(10px)';
-                ctx.fillRect(box.x, box.y, box.width, box.height);
-            });
+            try {
+                const img = await faceapi.bufferToImage(input);
+                const canvas = document.getElementById('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                // Deteksi wajah
+                const detections = await faceapi.detectAllFaces(img)
+                    .withFaceLandmarks();
+                
+                // Terapkan blur pada area wajah
+                detections.forEach(detection => {
+                    const box = detection.detection.box;
+                    ctx.filter = 'blur(10px)';
+                    ctx.fillRect(box.x, box.y, box.width, box.height);
+                    ctx.filter = 'none'; // Reset filter untuk elemen lain
+                    ctx.drawImage(img, box.x, box.y, box.width, box.height, box.x, box.y, box.width, box.height);
+                });
+            } catch (error) {
+                console.error('Gagal mendeteksi atau memproses wajah:', error);
+                alert('Gagal memproses gambar. Periksa konsol untuk detail.');
+            }
         }
 
         function downloadImage() {
             const canvas = document.getElementById('canvas');
+            if (!canvas.width || !canvas.height) {
+                alert('Tidak ada gambar untuk diunduh. Proses gambar terlebih dahulu.');
+                return;
+            }
             const link = document.createElement('a');
             link.download = 'blurred_image.png';
-            link.href = canvas.toDataURL();
+            link.href = canvas.toDataURL('image/png');
             link.click();
         }
     </script>
