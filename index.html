@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>BlurryFace by UPSKK - Blur Faces in Images</title>
+    <title>BlurryFace - Blur Faces in Images</title>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -145,7 +145,6 @@
             
             const isAutoBlur = document.getElementById('autoBlur').checked;
             
-            // Redraw the original image to reset the canvas before blurring
             ctx.drawImage(currentImage, 0, 0);
 
             if (isAutoBlur) {
@@ -204,7 +203,7 @@
                 return;
             }
             const link = document.createElement('a');
-            link.download = 'blurred_image.png';
+            link.download = 'blurred_image.png'; // Menambahkan atribut download
             link.href = canvas.toDataURL('image/png');
             link.click();
         });
