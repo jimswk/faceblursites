@@ -1,135 +1,182 @@
 <!DOCTYPE html>
-<html lang="id">
+<html class="dark" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fast Face Blur UPSKK</title>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>BlurryFace by UPSKK - Blur Faces in Images</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        display: ["Space Grotesk"],
+                    },
+                    borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+                },
+            },
+        };
+    </script>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
-        canvas {
-            border: 1px solid black;
-            max-width: 100%;
-            height: auto;
-            cursor: crosshair; /* Mengubah kursor menjadi tanda plus */
-        }
-        input, button {
-            margin: 10px;
-            padding: 10px;
-            font-size: 16px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
+            font-family: "Space Grotesk", sans-serif;
         }
     </style>
 </head>
-<body>
-    <h1>Blurkan Wajah</h1>
-    <p>Klik pada wajah yang ingin Anda Blur secara manual.</p>
-    <input type="file" id="imageUpload" accept="image/*">
-    <br>
-    <button onclick="autoBlur()">Blurkan Automatik</button>
-    <button onclick="downloadImage()">Muatturun Gambar</button>
-    <br>
-    <canvas id="canvas"></canvas>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
+    <div class="flex h-full min-h-screen w-full flex-col">
+        <header class="sticky top-0 z-50 w-full border-b border-slate-200/50 dark:border-slate-800/50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
+            <div class="container mx-auto flex items-center justify-between px-4 py-3">
+                <div class="flex items-center gap-3">
+                    <svg class="h-8 w-8 text-primary" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM8 11h8v2H8v-2zm-3.5-3.5c-.83 0-1.5-.67-1.5-1.5S3.67 4.5 4.5 4.5s1.5.67 1.5 1.5S5.33 7.5 4.5 7.5zm15 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-5.83 8.33c-1.39 1.39-3.59 1.39-4.98 0-.2-.2-.2-.51 0-.71s.51-.2.71 0c1.19 1.19 3.16 1.19 4.34 0 .2-.2.51-.2.71 0s.2.51 0 .71z"></path>
+                    </svg>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white">BlurryFace</h2>
+                </div>
+            </div>
+        </header>
+        <main class="flex-grow container mx-auto px-4 py-8 sm:py-16">
+            <div class="mx-auto max-w-3xl text-center">
+                <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    Blur Faces in Your Images Instantly
+                </h1>
+                <p class="mt-4 text-lg text-slate-600 dark:text-slate-400">
+                    Protect privacy by automatically blurring faces in your photos. Upload an image and let our AI do the work, or take control with manual blurring tools.
+                </p>
+            </div>
+            <div class="mt-12 flex flex-col items-center gap-12">
+                <div class="w-full max-w-3xl rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-background-light dark:bg-background-dark p-8 text-center transition-colors hover:border-primary/50 dark:hover:border-primary/50">
+                    <div class="flex flex-col items-center justify-center space-y-4">
+                        <div class="rounded-full bg-slate-200 dark:bg-slate-800 p-3">
+                            <span class="material-symbols-outlined text-4xl text-slate-500 dark:text-slate-400">
+                                upload_file
+                            </span>
+                        </div>
+                        <p class="text-lg font-semibold text-slate-800 dark:text-slate-200">Drag and drop an image here</p>
+                        <p class="text-slate-500 dark:text-slate-400">or</p>
+                        <button class="inline-flex items-center gap-2 rounded-lg bg-primary/10 dark:bg-primary/20 px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors">
+                            <input type="file" id="imageUpload" accept="image/*" class="absolute w-full h-full opacity-0 cursor-pointer">
+                            Browse Files
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full max-w-2xl">
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white text-center mb-6">Blurring Options</h2>
+                    <div class="space-y-4">
+                        <label class="flex cursor-pointer items-start gap-4 rounded-xl border border-slate-200 dark:border-slate-800 p-4 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 dark:has-[:checked]:bg-primary/10">
+                            <input id="autoBlur" checked="" class="mt-1 h-5 w-5 shrink-0 appearance-none rounded-full border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 checked:border-primary checked:bg-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-light dark:focus:ring-offset-background-dark" name="blur_option" type="radio">
+                            <div class="flex flex-col">
+                                <p class="font-semibold text-slate-800 dark:text-slate-200">Automatic Face Detection</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">Our AI will automatically detect and blur all faces in the image.</p>
+                            </div>
+                        </label>
+                        <label class="flex cursor-pointer items-start gap-4 rounded-xl border border-slate-200 dark:border-slate-800 p-4 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 dark:has-[:checked]:bg-primary/10">
+                            <input id="manualBlur" class="mt-1 h-5 w-5 shrink-0 appearance-none rounded-full border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 checked:border-primary checked:bg-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-light dark:focus:ring-offset-background-dark" name="blur_option" type="radio">
+                            <div class="flex flex-col">
+                                <p class="font-semibold text-slate-800 dark:text-slate-200">Manual Blur</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">Use a brush tool to manually select and blur specific areas.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-2xl mt-8">
+                    <button id="blurButton" class="flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-base font-bold text-white shadow-lg shadow-primary/30 transition-transform hover:scale-105">
+                        <span class="material-symbols-outlined">blur_on</span>
+                        Blur Faces
+                    </button>
+                    <button id="downloadButton" class="flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-slate-200 dark:bg-slate-800 px-8 py-3 text-base font-bold text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-300 dark:hover:bg-slate-700">
+                        <span class="material-symbols-outlined">download</span>
+                        Download Image
+                    </button>
+                </div>
+                <div class="w-full max-w-3xl">
+                    <canvas id="canvas" class="w-full rounded-lg shadow-md border border-slate-300 dark:border-slate-700"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
 
     <script>
-        let currentImage; // Variabel untuk menyimpan gambar yang diunggah
+        let currentImage;
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
         async function loadFaceModels() {
             try {
                 await faceapi.nets.ssdMobilenetv1.loadFromUri('https://jimswk.github.io/faceblursites/models/');
                 await faceapi.nets.faceLandmark68Net.loadFromUri('https://jimswk.github.io/faceblursites/models/');
-                console.log('Model wajah berhasil dimuat');
+                console.log('Face models loaded successfully');
             } catch (error) {
-                console.error('Gagal memuat model wajah:', error);
-                alert('Gagal memuat model wajah. Periksa konsol untuk detail.');
+                console.error('Failed to load face models:', error);
+                alert('Failed to load face models. Check the console for details.');
             }
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-            if (typeof faceapi === 'undefined') {
-                console.error('faceapi tidak didefinisikan. Pastikan face-api.js dimuat.');
-                alert('Pustaka face-api.js gagal dimuat.');
-                return;
-            }
             await loadFaceModels();
-            
-            const imageUpload = document.getElementById('imageUpload');
-            imageUpload.addEventListener('change', handleImageUpload);
         });
 
-        async function handleImageUpload(event) {
+        document.getElementById('imageUpload').addEventListener('change', async (event) => {
             const input = event.target.files[0];
             if (!input) return;
             
             currentImage = await faceapi.bufferToImage(input);
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            
             canvas.width = currentImage.width;
             canvas.height = currentImage.height;
             ctx.drawImage(currentImage, 0, 0);
-        }
+        });
 
-        async function autoBlur() {
+        document.getElementById('blurButton').addEventListener('click', async () => {
             if (!currentImage) {
-                alert('Silakan unggah gambar terlebih dahulu.');
+                alert('Please upload an image first.');
                 return;
             }
             
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const isAutoBlur = document.getElementById('autoBlur').checked;
             
-            // Gambar ulang gambar asli untuk memulai dari awal
+            // Redraw the original image to reset the canvas before blurring
             ctx.drawImage(currentImage, 0, 0);
 
-            try {
-                const detections = await faceapi.detectAllFaces(currentImage)
-                    .withFaceLandmarks();
-
-                detections.forEach(detection => {
-                    const box = detection.detection.box;
-                    
-                    ctx.save();
-                    
-                    const centerX = box.x + box.width / 2;
-                    const centerY = box.y + box.height / 2;
-                    const radiusX = box.width / 2 * 1.1;
-                    const radiusY = box.height / 2 * 1.3;
-
-                    ctx.beginPath();
-                    ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
-                    ctx.clip();
-
-                    ctx.filter = 'blur(20px)';
-                    ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
-                    
-                    ctx.restore();
-                });
-            } catch (error) {
-                console.error('Gagal mendeteksi atau memproses wajah:', error);
-                alert('Gagal memproses gambar. Periksa konsol untuk detail.');
+            if (isAutoBlur) {
+                try {
+                    const detections = await faceapi.detectAllFaces(currentImage).withFaceLandmarks();
+                    detections.forEach(detection => {
+                        const box = detection.detection.box;
+                        ctx.save();
+                        const centerX = box.x + box.width / 2;
+                        const centerY = box.y + box.height / 2;
+                        const radiusX = box.width / 2 * 1.1;
+                        const radiusY = box.height / 2 * 1.3;
+                        ctx.beginPath();
+                        ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+                        ctx.clip();
+                        ctx.filter = 'blur(20px)';
+                        ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
+                        ctx.restore();
+                    });
+                } catch (error) {
+                    console.error('Failed to detect or process faces:', error);
+                    alert('Failed to process the image. Check the console for details.');
+                }
+            } else {
+                alert('Please click on the image to manually blur areas.');
             }
-        }
-        
-        // Fungsi untuk memburamkan secara manual
-        const canvas = document.getElementById('canvas');
+        });
+
         canvas.addEventListener('click', (event) => {
-            if (!currentImage) {
-                alert('Silakan unggah gambar terlebih dahulu.');
-                return;
-            }
+            const isManualBlur = document.getElementById('manualBlur').checked;
+            if (!currentImage || !isManualBlur) return;
 
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -138,13 +185,9 @@
             const clickX = (event.clientX - rect.left) * scaleX;
             const clickY = (event.clientY - rect.top) * scaleY;
             
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            
             ctx.save();
-            
-            // Definisikan ukuran oval manual. Nilai ini bisa disesuaikan.
-            const manualRadiusX = 40; 
-            const manualRadiusY = 55; 
+            const manualRadiusX = 50; 
+            const manualRadiusY = 65; 
 
             ctx.beginPath();
             ctx.ellipse(clickX, clickY, manualRadiusX, manualRadiusY, 0, 0, 2 * Math.PI);
@@ -152,21 +195,33 @@
 
             ctx.filter = 'blur(20px)';
             ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
-            
             ctx.restore();
         });
 
-        function downloadImage() {
-            const canvas = document.getElementById('canvas');
-            if (!canvas.width || !canvas.height) {
-                alert('Tidak ada gambar untuk diunduh. Proses gambar terlebih dahulu.');
+        document.getElementById('downloadButton').addEventListener('click', () => {
+            if (canvas.width === 0 || canvas.height === 0) {
+                alert('There is no image to download. Please process an image first.');
                 return;
             }
             const link = document.createElement('a');
             link.download = 'blurred_image.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
-        }
+        });
+
+        document.getElementById('manualBlur').addEventListener('change', (event) => {
+            if (event.target.checked) {
+                document.getElementById('blurButton').style.display = 'none';
+                canvas.style.cursor = 'crosshair';
+            }
+        });
+
+        document.getElementById('autoBlur').addEventListener('change', (event) => {
+            if (event.target.checked) {
+                document.getElementById('blurButton').style.display = 'block';
+                canvas.style.cursor = 'default';
+            }
+        });
     </script>
 </body>
 </html>
