@@ -68,14 +68,17 @@
         let modelsLoaded = false;
  
         // Muat model Face-API.js
-        async function loadModels() {
+        async function loadFaceModels() {
+            const MODEL_URL = 'https://cdn.jsdelivr.net/gh/jimswk/faceblursites@main/models';
             try {
-                await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
-                modelsLoaded = true;
-                console.log('Model berhasil dimuat.');
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+                console.log('Semua model wajah berjaya dimuatkan.');
+                return true;
             } catch (error) {
-                console.error('Gagal memuat model:', error);
-                alert('Gagal memuat model. Pastikan folder "models" ada di direktori yang sama.');
+                console.error('Gagal memuatkan model wajah:', error);
+                // Assuming you have a function to display a status message
+                showStatusMessage('Gagal muat model wajah. Sila semak sambungan internet dan URL model.', 'error');
+                return false;
             }
         }
  
