@@ -37,7 +37,7 @@
     <input type="file" id="imageUpload" accept="image/*">
     <br>
     <button onclick="blurFaces()">Blurkan Wajah</button>
-    <button onclick="downloadImage()">Unduh Gambar</button>
+    <button onclick="downloadImage()">Muat turun Gambar</button>
     <br>
     <canvas id="canvas"></canvas>
 
@@ -72,7 +72,6 @@
             try {
                 const img = await faceapi.bufferToImage(input);
                 const canvas = document.getElementById('canvas');
-                // Menggunakan atribut willReadFrequently untuk optimasi
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
                 
                 canvas.width = img.width;
@@ -85,24 +84,23 @@
                 detections.forEach(detection => {
                     const box = detection.detection.box;
                     
-                    // Simpan state kanvas
                     ctx.save();
                     
-                    // Buat jalur kliping oval
                     const centerX = box.x + box.width / 2;
                     const centerY = box.y + box.height / 2;
-                    const radiusX = box.width / 2;
-                    const radiusY = box.height / 2 * 1.3; // Tambahkan tinggi untuk menutupi kepala dan rambut
+                    
+                    // Radius horizontal (lebar) diperlebar
+                    const radiusX = box.width / 2 * 1.1; // Nilai 1.1 dapat disesuaikan
+                    // Radius vertikal (tinggi) diperlebar sedikit
+                    const radiusY = box.height / 2 * 1.3;
 
                     ctx.beginPath();
                     ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
-                    ctx.clip(); // Batasi area gambar ke jalur kliping oval
+                    ctx.clip();
 
-                    // Terapkan blur dan gambar gambar asli yang diburamkan di dalam area kliping
                     ctx.filter = 'blur(20px)';
                     ctx.drawImage(img, 0, 0, img.width, img.height);
                     
-                    // Pulihkan state kanvas
                     ctx.restore();
                 });
             } catch (error) {
