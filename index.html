@@ -44,9 +44,9 @@
     <script>
         async function loadFaceModels() {
             try {
-                // Ganti '/models' dengan path ke model Anda jika di-host lokal
-                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://jimswk.github.io/faceblursites/models/');
-                await faceapi.nets.faceLandmark68Net.loadFromUri('https://jimswk.github.io/faceblursites/models/');
+                // Gunakan model dari CDN untuk deteksi wajah dan landmark
+                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models/');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models/');
                 console.log('Model wajah berhasil dimuat');
             } catch (error) {
                 console.error('Gagal memuat model wajah:', error);
@@ -77,19 +77,40 @@
                 canvas.width = img.width;
                 canvas.height = img.height;
                 const ctx = canvas.getContext('2d');
+
+                // Gambar gambar asli terlebih dahulu
                 ctx.drawImage(img, 0, 0);
 
-                // Deteksi wajah
+                // Deteksi wajah dan landmark
                 const detections = await faceapi.detectAllFaces(img)
                     .withFaceLandmarks();
-                
-                // Terapkan blur pada area wajah
+
+                // Proses setiap wajah yang terdeteksi
                 detections.forEach(detection => {
-                    const box = detection.detection.box;
+                    const landmarks = detection.landmarks;
+                    const jawOutline = landmarks.getJawOutline(); // Titik-titik garis rahang
+
+                    // Simpan state kanvas
+                    ctx.save();
+
+                    // Buat jalur kliping berdasarkan garis rahang
+                    ctx.beginPath();
+                    jawOutline.forEach((point, index) => {
+                        if (index === 0) {
+                            ctx.moveTo(point.x, point.y);
+                        } else {
+                            ctx.lineTo(point.x, point.y);
+                        }
+                    });
+                    ctx.closePath();
+                    ctx.clip(); // Batasi area gambar ke jalur kliping
+
+                    // Terapkan blur pada area wajah
                     ctx.filter = 'blur(10px)';
-                    ctx.fillRect(box.x, box.y, box.width, box.height);
-                    ctx.filter = 'none'; // Reset filter untuk elemen lain
-                    ctx.drawImage(img, box.x, box.y, box.width, box.height, box.x, box.y, box.width, box.height);
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+
+                    // Pulihkan state kanvas
+                    ctx.restore();
                 });
             } catch (error) {
                 console.error('Gagal mendeteksi atau memproses wajah:', error);
