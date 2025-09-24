@@ -5,27 +5,97 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fast Face Blur UPSKK</title>
   
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Font & Icon -->
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
 
-  <!-- Face API -->
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.13.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0.5/dist/body-pix.min.js"></script>
 
   <style>
     body {
       font-family: 'Space Grotesk', sans-serif;
     }
+    .range-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 5px;
+      background: #d3d3d3;
+      outline: none;
+    }
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+    }
+    .range-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+    }
+    .tab-active {
+      background-color: #3b82f6;
+      color: white;
+    }
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: white;
+    }
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top: 4px solid white;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .control-panel {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .dark .control-panel {
+      background: rgba(30, 41, 59, 0.9);
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-slate-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
 
-  <!-- HEADER -->
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p id="loadingText">Memproses gambar...</p>
+  </div>
+
   <header class="sticky top-0 z-50 w-full border-b border-slate-200/50 dark:border-slate-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
     <div class="container mx-auto flex items-center justify-between px-4 py-3">
       <div class="flex items-center gap-3">
@@ -51,15 +121,20 @@
         <h2 class="text-xl font-bold text-slate-900 dark:text-white">BlurryFace by UPSKK</h2>
       </div>
 
-      <!-- Dark/Light Toggle -->
-      <button id="themeToggle" class="p-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 transition">
-        <span id="themeIcon" class="material-symbols-outlined text-slate-700 dark:text-slate-200">dark_mode</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
+          <button id="blurTab" class="px-3 py-1 rounded-md tab-active transition">Blur Face</button>
+          <button id="removeBgTab" class="px-3 py-1 rounded-md transition">Remove BG</button>
+        </div>
+
+        <button id="themeToggle" class="p-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 transition">
+          <span id="themeIcon" class="material-symbols-outlined text-slate-700 dark:text-slate-200">dark_mode</span>
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- MAIN CONTENT -->
-  <main class="flex-grow container mx-auto px-4 py-8 sm:py-16">
+  <main id="blurContent" class="flex-grow container mx-auto px-4 py-8 sm:py-16">
     <div class="mx-auto max-w-3xl text-center">
       <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
         Blur Faces in Your Images Instantly
@@ -69,7 +144,6 @@
       </p>
     </div>
 
-    <!-- Upload -->
     <div class="mt-10 flex flex-col items-center">
       <input type="file" id="imageUpload" accept="image/*"
         class="mb-6 block text-sm text-gray-700 dark:text-gray-300 
@@ -77,23 +151,60 @@
                file:rounded-lg file:border-0 file:text-sm file:font-semibold
                file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"/>
 
-      <!-- Tombol Aksi -->
-      <div class="flex flex-wrap justify-center gap-3 mb-6">
-        <button onclick="autoBlur()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium shadow">Blur Automatik</button>
-        <button onclick="resetImage()" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium shadow">Reset</button>
-        <button onclick="undo()" class="px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-medium shadow">Undo</button>
-        <button onclick="redo()" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium shadow">Redo</button>
-        <button onclick="downloadImage()" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium shadow">Download</button>
+      <div class="control-panel w-full max-w-4xl">
+        <div class="mb-4">
+          <label for="blurIntensity" class="block text-sm font-medium mb-2">Intensitas Blur: <span id="blurValue">20</span>px</label>
+          <input type="range" id="blurIntensity" min="5" max="50" value="20" class="range-slider">
+        </div>
+        
+        <div class="flex flex-wrap justify-center gap-3">
+          <button onclick="autoBlur()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium shadow">Blur Automatik</button>
+          <button onclick="resetImage()" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium shadow">Reset</button>
+          <button onclick="undo()" class="px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-medium shadow">Undo</button>
+          <button onclick="redo()" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium shadow">Redo</button>
+          <button onclick="downloadImage()" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium shadow">Download</button>
+        </div>
       </div>
 
-      <!-- Canvas -->
       <div class="w-full max-w-4xl">
         <canvas id="canvas" class="border border-gray-600 rounded-xl shadow-lg w-full cursor-crosshair"></canvas>
       </div>
     </div>
   </main>
 
-  <!-- SCRIPTS -->
+  <main id="removeBgContent" class="hidden flex-grow container mx-auto px-4 py-8 sm:py-16">
+    <div class="mx-auto max-w-3xl text-center">
+      <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
+        Remove Background from Your Images
+      </h1>
+      <p class="mt-4 text-lg text-slate-600 dark:text-slate-400">
+        Easily remove the background from your photos using AI.
+      </p>
+    </div>
+
+    <div class="mt-10 flex flex-col items-center">
+      <input type="file" id="imageUploadBg" accept="image/*"
+        class="mb-6 block text-sm text-gray-700 dark:text-gray-300 
+               file:mr-4 file:py-2 file:px-4 
+               file:rounded-lg file:border-0 file:text-sm file:font-semibold
+               file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"/>
+
+      <div class="control-panel w-full max-w-4xl">
+        <div class="flex flex-wrap justify-center gap-3">
+          <button onclick="removeBackground()" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-medium shadow">Hapus Latar Belakang</button>
+          <button onclick="resetImageBg()" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium shadow">Reset</button>
+          <button onclick="undoBg()" class="px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-medium shadow">Undo</button>
+          <button onclick="redoBg()" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium shadow">Redo</button>
+          <button onclick="downloadImageBg()" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium shadow">Download PNG</button>
+        </div>
+      </div>
+
+      <div class="w-full max-w-4xl">
+        <canvas id="canvasBg" class="border border-gray-600 rounded-xl shadow-lg w-full cursor-crosshair"></canvas>
+      </div>
+    </div>
+  </main>
+
   <script>
     // === Dark/Light Toggle ===
     const html = document.documentElement;
@@ -115,52 +226,154 @@
 
     updateThemeIcon();
 
-    // === Face Blur Script (sama seperti sebelumnya) ===
+    // === Tab Navigation ===
+    const blurTab = document.getElementById("blurTab");
+    const removeBgTab = document.getElementById("removeBgTab");
+    const blurContent = document.getElementById("blurContent");
+    const removeBgContent = document.getElementById("removeBgContent");
+
+    blurTab.addEventListener("click", () => {
+      blurTab.classList.add("tab-active");
+      removeBgTab.classList.remove("tab-active");
+      blurContent.classList.remove("hidden");
+      removeBgContent.classList.add("hidden");
+    });
+
+    removeBgTab.addEventListener("click", () => {
+      removeBgTab.classList.add("tab-active");
+      blurTab.classList.remove("tab-active");
+      removeBgContent.classList.remove("hidden");
+      blurContent.classList.add("hidden");
+    });
+
+    // === Global Variables ===
     let currentImage;
     let history = [];
     let historyIndex = -1;
+    let blurIntensity = 20;
 
-    async function loadFaceModels() {
-      try {
-        await faceapi.nets.ssdMobilenetv1.loadFromUri('https://jimswk.github.io/faceblursites/models/');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('https://jimswk.github.io/faceblursites/models/');
-        console.log('✅ Model wajah berhasil dimuat');
-      } catch (error) {
-        console.error('❌ Gagal memuat model wajah:', error);
-        alert('Gagal memuat model wajah. Periksa konsol.');
-      }
+    let currentImageBg;
+    let historyBg = [];
+    let historyIndexBg = -1;
+    let bodyPixNet;
+
+    // === Loading Indicator Functions ===
+    function showLoading(text = "Memproses gambar...") {
+      const overlay = document.getElementById("loadingOverlay");
+      const loadingText = document.getElementById("loadingText");
+      loadingText.textContent = text;
+      overlay.style.display = "flex";
     }
 
+    function hideLoading() {
+      const overlay = document.getElementById("loadingOverlay");
+      overlay.style.display = "none";
+    }
+
+    // === Blur Intensity Control ===
+    const blurSlider = document.getElementById("blurIntensity");
+    const blurValue = document.getElementById("blurValue");
+
+    blurSlider.addEventListener("input", function() {
+      blurIntensity = parseInt(this.value);
+      blurValue.textContent = blurIntensity;
+    });
+
+    // === Model Loading ===
+    async function loadFaceModels() {
+      try {
+        showLoading("Memuat model AI...");
+        
+        // Menggunakan model dari CDN yang tersedia
+        await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+        
+        hideLoading();
+        console.log('✅ Model wajah berhasil dimuat');
+      } catch (error) {
+        hideLoading();
+        console.error('❌ Gagal memuat model wajah:', error);
+        alert('Gagal memuat model wajah. Periksa konsol untuk detail.');
+      }
+    }
+    
+    async function loadBodyPixModel() {
+        try {
+            showLoading("Memuat model penghapus latar belakang...");
+            bodyPixNet = await bodyPix.load({
+                architecture: 'MobileNetV1',
+                outputStride: 16,
+                multiplier: 0.75,
+                quantBytes: 2
+            });
+            hideLoading();
+            console.log('✅ Model BodyPix berhasil dimuat');
+        } catch (error) {
+            hideLoading();
+            console.error('❌ Gagal memuat model BodyPix:', error);
+            alert('Gagal memuat model BodyPix. Periksa konsol untuk detail.');
+        }
+    }
+
+    // Initialize models when page loads
     document.addEventListener('DOMContentLoaded', async () => {
       if (typeof faceapi === 'undefined') {
         console.error('faceapi tidak didefinisikan.');
         alert('Pustaka face-api.js gagal dimuat.');
         return;
       }
+      
       await loadFaceModels();
+      await loadBodyPixModel();
+      
       const imageUpload = document.getElementById('imageUpload');
       imageUpload.addEventListener('change', handleImageUpload);
+      
+      const imageUploadBg = document.getElementById('imageUploadBg');
+      imageUploadBg.addEventListener('change', handleImageUploadBg);
     });
 
+    // === BLUR FACE FUNCTIONS ===
     async function handleImageUpload(event) {
       const input = event.target.files[0];
       if (!input) return;
-      currentImage = await faceapi.bufferToImage(input);
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      canvas.width = currentImage.width;
-      canvas.height = currentImage.height;
-      ctx.drawImage(currentImage, 0, 0);
-      saveState();
+      
+      showLoading("Memuat gambar...");
+      
+      try {
+        currentImage = await faceapi.bufferToImage(input);
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        canvas.width = currentImage.width;
+        canvas.height = currentImage.height;
+        ctx.drawImage(currentImage, 0, 0);
+        saveState();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        console.error('❌ Gagal memuat gambar:', error);
+        alert('Gagal memuat gambar. Pastikan file adalah gambar yang valid.');
+      }
     }
 
     async function autoBlur() {
       if (!currentImage) return alert('Muat naik gambar dulu.');
+      
+      showLoading("Mendeteksi dan mengaburkan wajah...");
+      
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       ctx.drawImage(currentImage, 0, 0);
+      
       try {
         const detections = await faceapi.detectAllFaces(currentImage).withFaceLandmarks();
+        
+        if (detections.length === 0) {
+          hideLoading();
+          alert('Tidak ada wajah yang terdeteksi dalam gambar.');
+          return;
+        }
+        
         detections.forEach(detection => {
           const box = detection.detection.box;
           ctx.save();
@@ -171,31 +384,37 @@
           ctx.beginPath();
           ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
           ctx.clip();
-          ctx.filter = 'blur(20px)';
+          ctx.filter = `blur(${blurIntensity}px)`;
           ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
           ctx.restore();
         });
+        
         saveState();
+        hideLoading();
       } catch (error) {
+        hideLoading();
         console.error('❌ Gagal kesan wajah:', error);
-        alert('Gagal proses gambar.');
+        alert('Gagal memproses gambar. Pastikan model AI telah dimuat dengan benar.');
       }
     }
 
+    // Manual blur with click
     const canvas = document.getElementById('canvas');
     canvas.addEventListener('click', (event) => {
-      if (!currentImage) return alert('Muatnaik gambar dahulu.');
+      if (!currentImage) return alert('Muat naik gambar dahulu.');
+      
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
       const clickX = (event.clientX - rect.left) * scaleX;
       const clickY = (event.clientY - rect.top) * scaleY;
+      
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       ctx.save();
       ctx.beginPath();
       ctx.ellipse(clickX, clickY, 40, 55, 0, 0, 2 * Math.PI);
       ctx.clip();
-      ctx.filter = 'blur(20px)';
+      ctx.filter = `blur(${blurIntensity}px)`;
       ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
       ctx.restore();
       saveState();
@@ -254,6 +473,127 @@
       if (!canvas.width || !canvas.height) return alert('Tidak ada gambar.');
       const link = document.createElement('a');
       link.download = 'blurred_image.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // === REMOVE BACKGROUND FUNCTIONS (USING BODYPIX) ===
+    async function handleImageUploadBg(event) {
+      const input = event.target.files[0];
+      if (!input) return;
+      
+      showLoading("Memuat gambar...");
+      
+      try {
+        currentImageBg = await faceapi.bufferToImage(input);
+        const canvas = document.getElementById('canvasBg');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        canvas.width = currentImageBg.width;
+        canvas.height = currentImageBg.height;
+        ctx.drawImage(currentImageBg, 0, 0);
+        saveStateBg();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        console.error('❌ Gagal memuat gambar:', error);
+        alert('Gagal memuat gambar. Pastikan file adalah gambar yang valid.');
+      }
+    }
+
+    async function removeBackground() {
+      if (!currentImageBg) return alert('Muat naik gambar dulu.');
+      if (!bodyPixNet) return alert('Model BodyPix belum dimuat.');
+
+      showLoading("Menghapus latar belakang...");
+
+      const canvas = document.getElementById('canvasBg');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      try {
+        // Melakukan segmentasi pada gambar
+        const segmentation = await bodyPixNet.segmentPerson(currentImageBg);
+        
+        // Membuat mask transparan untuk latar belakang
+        const mask = bodyPix.toMask(segmentation);
+        
+        // Membuat canvas sementara untuk mask
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = canvas.width;
+        maskCanvas.height = canvas.height;
+        const maskCtx = maskCanvas.getContext('2d');
+        maskCtx.putImageData(mask, 0, 0);
+        
+        // Menggambar gambar asli
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(currentImageBg, 0, 0);
+        
+        // Menerapkan mask untuk memotong latar belakang
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(maskCanvas, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+        
+        saveStateBg();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        console.error('❌ Gagal hapus latar belakang:', error);
+        alert('Gagal memproses gambar untuk menghapus latar belakang.');
+      }
+    }
+
+    function saveStateBg() {
+      const canvas = document.getElementById('canvasBg');
+      if (historyIndexBg < historyBg.length - 1) {
+        historyBg = historyBg.slice(0, historyIndexBg + 1);
+      }
+      historyBg.push(canvas.toDataURL());
+      historyIndexBg++;
+    }
+
+    function resetImageBg() {
+      if (!currentImageBg) return alert('Tidak ada gambar.');
+      const canvas = document.getElementById('canvasBg');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(currentImageBg, 0, 0);
+      historyBg = [];
+      historyIndexBg = -1;
+      saveStateBg();
+    }
+
+    function undoBg() {
+      if (historyIndexBg > 0) {
+        historyIndexBg--;
+        const canvas = document.getElementById('canvasBg');
+        const ctx = canvas.getContext('2d');
+        const image = new Image();
+        image.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(image, 0, 0);
+        };
+        image.src = historyBg[historyIndexBg];
+      } else alert('Tidak ada undo.');
+    }
+
+    function redoBg() {
+      if (historyIndexBg < historyBg.length - 1) {
+        historyIndexBg++;
+        const canvas = document.getElementById('canvasBg');
+        const ctx = canvas.getContext('2d');
+        const image = new Image();
+        image.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(image, 0, 0);
+        };
+        image.src = historyBg[historyIndexBg];
+      } else alert('Tidak ada redo.');
+    }
+
+    function downloadImageBg() {
+      const canvas = document.getElementById('canvasBg');
+      if (!canvas.width || !canvas.height) return alert('Tidak ada gambar.');
+      const link = document.createElement('a');
+      link.download = 'transparent_image.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
     }
