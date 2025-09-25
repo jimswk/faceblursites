@@ -77,7 +77,7 @@
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     .dark .control-panel {
-      background: rgba(30, 41, 59, 0.9);
+      background: white;
     }
     .blur-option {
       transition: all 0.2s ease;
@@ -155,7 +155,7 @@
             <button id="blurBlackBar" class="blur-option px-3 py-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium">Black Bar</button>
           </div>
           
-          <label for="blurIntensity" class="block text-sm font-medium mb-2">Intensitas Blur: <span id="blurValue">20</span>px</label>
+          <label for="blurIntensity" class="block text-sm font-medium mb-2">Intensiti Blur: <span id="blurValue">20</span>px</label>
           <input type="range" id="blurIntensity" min="5" max="50" value="20" class="range-slider">
         </div>
         
@@ -203,28 +203,59 @@
     let blurType = 'gaussian'; // Default blur type
 
     // === Blur Type Selection ===
-    const blurGaussian = document.getElementById('blurGaussian');
-    const blurPixelate = document.getElementById('blurPixelate');
-    const blurBlackBar = document.getElementById('blurBlackBar');
-    const blurOptions = [blurGaussian, blurPixelate, blurBlackBar];
+    function initializeBlurTypeSelection() {
+      const blurGaussian = document.getElementById('blurGaussian');
+      const blurPixelate = document.getElementById('blurPixelate');
+      const blurBlackBar = document.getElementById('blurBlackBar');
+      
+      // Pastikan elemen ada sebelum menambahkan event listener
+      if (blurGaussian && blurPixelate && blurBlackBar) {
+        blurGaussian.addEventListener('click', () => setBlurType('gaussian'));
+        blurPixelate.addEventListener('click', () => setBlurType('pixelate'));
+        blurBlackBar.addEventListener('click', () => setBlurType('blackBar'));
+        
+        // Set default active state
+        setBlurType('gaussian');
+      } else {
+        console.error('Salah satu tombol blur tidak ditemukan');
+      }
+    }
 
     function setBlurType(type) {
       blurType = type;
       
-      // Update UI
-      blurOptions.forEach(option => {
-        option.classList.remove('active', 'bg-blue-100', 'dark:bg-blue-900', 'text-blue-800', 'dark:text-blue-200');
-        option.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
+      // Dapatkan semua tombol blur
+      const blurGaussian = document.getElementById('blurGaussian');
+      const blurPixelate = document.getElementById('blurPixelate');
+      const blurBlackBar = document.getElementById('blurBlackBar');
+      
+      // Reset semua tombol ke state tidak aktif
+      [blurGaussian, blurPixelate, blurBlackBar].forEach(button => {
+        if (button) {
+          button.classList.remove('active', 'bg-blue-100', 'dark:bg-blue-900', 'text-blue-800', 'dark:text-blue-200');
+          button.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
+        }
       });
       
-      const activeButton = document.getElementById(`blur${type.charAt(0).toUpperCase() + type.slice(1).replace(/([A-Z])/g, ' $1').replace(/Bar/, 'Bar')}`);
-      activeButton.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
-      activeButton.classList.add('active', 'bg-blue-100', 'dark:bg-blue-900', 'text-blue-800', 'dark:text-blue-200');
+      // Set tombol aktif berdasarkan jenis blur
+      let activeButton;
+      switch(type) {
+        case 'gaussian':
+          activeButton = blurGaussian;
+          break;
+        case 'pixelate':
+          activeButton = blurPixelate;
+          break;
+        case 'blackBar':
+          activeButton = blurBlackBar;
+          break;
+      }
+      
+      if (activeButton) {
+        activeButton.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
+        activeButton.classList.add('active', 'bg-blue-100', 'dark:bg-blue-900', 'text-blue-800', 'dark:text-blue-200');
+      }
     }
-
-    blurGaussian.addEventListener('click', () => setBlurType('gaussian'));
-    blurPixelate.addEventListener('click', () => setBlurType('pixelate'));
-    blurBlackBar.addEventListener('click', () => setBlurType('blackBar'));
 
     // === Loading Indicator Functions ===
     function showLoading(text = "Memproses gambar...") {
@@ -243,10 +274,12 @@
     const blurSlider = document.getElementById("blurIntensity");
     const blurValue = document.getElementById("blurValue");
 
-    blurSlider.addEventListener("input", function() {
-      blurIntensity = parseInt(this.value);
-      blurValue.textContent = blurIntensity;
-    });
+    if (blurSlider && blurValue) {
+      blurSlider.addEventListener("input", function() {
+        blurIntensity = parseInt(this.value);
+        blurValue.textContent = blurIntensity;
+      });
+    }
 
     // === Model Loading ===
     async function loadFaceModels() {
@@ -268,6 +301,9 @@
 
     // Initialize models when page loads
     document.addEventListener('DOMContentLoaded', async () => {
+      // Inisialisasi pemilihan jenis blur
+      initializeBlurTypeSelection();
+      
       if (typeof faceapi === 'undefined') {
         console.error('faceapi tidak didefinisikan.');
         alert('Pustaka face-api.js gagal dimuat.');
@@ -277,7 +313,9 @@
       await loadFaceModels();
       
       const imageUpload = document.getElementById('imageUpload');
-      imageUpload.addEventListener('change', handleImageUpload);
+      if (imageUpload) {
+        imageUpload.addEventListener('change', handleImageUpload);
+      }
     });
 
     // === BLUR FACE FUNCTIONS ===
@@ -385,24 +423,26 @@
 
     // Manual blur with click
     const canvas = document.getElementById('canvas');
-    canvas.addEventListener('click', (event) => {
-      if (!currentImage) return alert('Muat naik gambar dahulu.');
-      
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const clickX = (event.clientX - rect.left) * scaleX;
-      const clickY = (event.clientY - rect.top) * scaleY;
-      
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      
-      // Apply blur effect at click position with default size
-      const blurWidth = 80;
-      const blurHeight = 110;
-      applyBlurEffect(ctx, clickX - blurWidth/2, clickY - blurHeight/2, blurWidth, blurHeight);
-      
-      saveState();
-    });
+    if (canvas) {
+      canvas.addEventListener('click', (event) => {
+        if (!currentImage) return alert('Muat naik gambar dahulu.');
+        
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const clickX = (event.clientX - rect.left) * scaleX;
+        const clickY = (event.clientY - rect.top) * scaleY;
+        
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        // Apply blur effect at click position with default size
+        const blurWidth = 80;
+        const blurHeight = 110;
+        applyBlurEffect(ctx, clickX - blurWidth/2, clickY - blurHeight/2, blurWidth, blurHeight);
+        
+        saveState();
+      });
+    }
 
     function saveState() {
       const canvas = document.getElementById('canvas');
