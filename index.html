@@ -90,7 +90,6 @@
 </head>
 <body class="bg-gray-50 text-slate-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
 
-  <!-- Loading Overlay -->
   <div id="loadingOverlay" class="loading-overlay">
     <div class="spinner"></div>
     <p id="loadingText">Memproses gambar...</p>
@@ -155,8 +154,11 @@
             <button id="blurBlackBar" class="blur-option px-3 py-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium">Black Bar</button>
           </div>
           
-          <label for="blurIntensity" class="block text-sm font-medium mb-2">Intensiti Blur: <span id="blurValue">20</span>px</label>
+          <label for="blurIntensity" class="block text-sm font-medium mb-2">Intensiti Blur (Kadar Kekaburan): <span id="blurValue">20</span>px</label>
           <input type="range" id="blurIntensity" min="5" max="50" value="20" class="range-slider">
+
+          <label for="manualBlurSize" class="block text-sm font-medium mt-4 mb-2">Saiz Blur Manual (Kawasan): <span id="manualBlurValue">100</span>px</label>
+          <input type="range" id="manualBlurSize" min="0" max="200" value="100" class="range-slider">
         </div>
         
         <div class="flex flex-wrap justify-center gap-3">
@@ -199,7 +201,8 @@
     let currentImage;
     let history = [];
     let historyIndex = -1;
-    let blurIntensity = 20;
+    let blurIntensity = 20; // Kadar kekaburan (untuk filter/pixelate size)
+    let manualBlurSize = 100; // Saiz kawasan blur manual (untuk lebar/tinggi)
     let blurType = 'gaussian'; // Default blur type
 
     // === Blur Type Selection ===
@@ -273,11 +276,20 @@
     // === Blur Intensity Control ===
     const blurSlider = document.getElementById("blurIntensity");
     const blurValue = document.getElementById("blurValue");
+    const manualBlurSlider = document.getElementById("manualBlurSize");
+    const manualBlurValue = document.getElementById("manualBlurValue");
 
     if (blurSlider && blurValue) {
       blurSlider.addEventListener("input", function() {
         blurIntensity = parseInt(this.value);
         blurValue.textContent = blurIntensity;
+      });
+    }
+
+    if (manualBlurSlider && manualBlurValue) {
+      manualBlurSlider.addEventListener("input", function() {
+        manualBlurSize = parseInt(this.value);
+        manualBlurValue.textContent = manualBlurSize;
       });
     }
 
@@ -343,36 +355,43 @@
 
     // Function to apply different blur types
     function applyBlurEffect(ctx, x, y, width, height) {
+      // Pastikan saiz bukan sifar untuk mengelakkan ralat, gunakan min 1
+      const effectiveWidth = Math.max(1, width);
+      const effectiveHeight = Math.max(1, height);
+      
       switch(blurType) {
         case 'gaussian':
           // Gaussian blur using CSS filter
           ctx.save();
           ctx.beginPath();
-          ctx.ellipse(x + width/2, y + height/2, width/2 * 1.1, height/2 * 1.3, 0, 0, 2 * Math.PI);
+          // Gunakan bentuk elips yang lebih tinggi untuk menutup wajah
+          ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2 * 1.1, effectiveHeight/2 * 1.3, 0, 0, 2 * Math.PI);
           ctx.clip();
-          ctx.filter = `blur(${blurIntensity}px)`;
+          // blurIntensity mengawal kadar kekaburan (Filter size)
+          ctx.filter = `blur(${blurIntensity}px)`; 
           ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
           ctx.restore();
           break;
           
         case 'pixelate':
           // Pixelation effect
-          const pixelSize = Math.max(1, Math.floor(blurIntensity / 2));
+          // blurIntensity mengawal saiz pixel
+          const pixelSize = Math.max(1, Math.floor(blurIntensity / 2)); 
           const smallCanvas = document.createElement('canvas');
           const smallCtx = smallCanvas.getContext('2d');
           
           // Create a small version of the area
-          smallCanvas.width = Math.ceil(width / pixelSize);
-          smallCanvas.height = Math.ceil(height / pixelSize);
-          smallCtx.drawImage(currentImage, x, y, width, height, 0, 0, smallCanvas.width, smallCanvas.height);
+          smallCanvas.width = Math.ceil(effectiveWidth / pixelSize);
+          smallCanvas.height = Math.ceil(effectiveHeight / pixelSize);
+          smallCtx.drawImage(currentImage, x, y, effectiveWidth, effectiveHeight, 0, 0, smallCanvas.width, smallCanvas.height);
           
           // Draw the pixelated version back
           ctx.save();
           ctx.beginPath();
-          ctx.ellipse(x + width/2, y + height/2, width/2 * 1.1, height/2 * 1.3, 0, 0, 2 * Math.PI);
+          ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2 * 1.1, effectiveHeight/2 * 1.3, 0, 0, 2 * Math.PI);
           ctx.clip();
           ctx.imageSmoothingEnabled = false;
-          ctx.drawImage(smallCanvas, 0, 0, smallCanvas.width, smallCanvas.height, x, y, width, height);
+          ctx.drawImage(smallCanvas, 0, 0, smallCanvas.width, smallCanvas.height, x, y, effectiveWidth, effectiveHeight);
           ctx.restore();
           break;
           
@@ -380,10 +399,10 @@
           // Black bar effect
           ctx.save();
           ctx.beginPath();
-          ctx.ellipse(x + width/2, y + height/2, width/2 * 1.1, height/2 * 1.3, 0, 0, 2 * Math.PI);
+          ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2 * 1.1, effectiveHeight/2 * 1.3, 0, 0, 2 * Math.PI);
           ctx.clip();
           ctx.fillStyle = 'black';
-          ctx.fillRect(x, y, width, height);
+          ctx.fillRect(x, y, effectiveWidth, effectiveHeight);
           ctx.restore();
           break;
       }
@@ -408,6 +427,7 @@
         }
         
         detections.forEach(detection => {
+          // autoBlur menggunakan saiz yang dikesan oleh AI (box.width, box.height)
           const box = detection.detection.box;
           applyBlurEffect(ctx, box.x, box.y, box.width, box.height);
         });
@@ -435,9 +455,11 @@
         
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
-        // Apply blur effect at click position with default size
-        const blurWidth = 80;
-        const blurHeight = 110;
+        // Gunakan manualBlurSize untuk saiz kawasan blur
+        // Gunakan Math.max(1, manualBlurSize) untuk memastikan saiz minimum 1px
+        const blurWidth = Math.max(1, manualBlurSize); 
+        const blurHeight = Math.max(1, manualBlurSize * 1.3); // Lebih tinggi sedikit untuk bentuk wajah
+        
         applyBlurEffect(ctx, clickX - blurWidth/2, clickY - blurHeight/2, blurWidth, blurHeight);
         
         saveState();
