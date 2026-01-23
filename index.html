@@ -86,6 +86,43 @@
       background-color: #3b82f6;
       color: white;
     }
+    .image-preview-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    .image-preview {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .image-preview:hover {
+      transform: scale(1.05);
+    }
+    .image-preview.active {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    }
+    .watermark-options {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .dark .watermark-options {
+      background: rgba(0, 0, 0, 0.2);
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-slate-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
@@ -139,11 +176,17 @@
     </div>
 
     <div class="mt-10 flex flex-col items-center">
-      <input type="file" id="imageUpload" accept="image/*"
+      <!-- Multiple Image Upload -->
+      <input type="file" id="imageUpload" accept="image/*" multiple
         class="mb-6 block text-sm text-gray-700 dark:text-gray-300 
                file:mr-4 file:py-2 file:px-4 
                file:rounded-lg file:border-0 file:text-sm file:font-semibold
                file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"/>
+      
+      <!-- Image Preview Container -->
+      <div id="imagePreviewContainer" class="image-preview-container w-full max-w-4xl hidden">
+        <!-- Image previews will be added here -->
+      </div>
 
       <div class="control-panel w-full max-w-4xl">
         <div class="mb-4">
@@ -159,14 +202,41 @@
 
           <label for="manualBlurSize" class="block text-sm font-medium mt-4 mb-2">Saiz Blur Manual (Kawasan): <span id="manualBlurValue">100</span>px</label>
           <input type="range" id="manualBlurSize" min="0" max="200" value="100" class="range-slider">
+          
+          <!-- Watermark Options -->
+          <div class="watermark-options">
+            <label class="block text-sm font-medium mb-2">Watermark Settings:</label>
+            <div class="flex items-center gap-4 mb-3">
+              <label class="flex items-center">
+                <input type="checkbox" id="enableWatermark" class="mr-2" checked>
+                <span class="text-sm">Tambah Watermark</span>
+              </label>
+              <label class="flex items-center">
+                <input type="checkbox" id="watermarkBottomRight" class="mr-2" checked>
+                <span class="text-sm">Sudut Kanan Bawah</span>
+              </label>
+              <label class="flex items-center">
+                <input type="checkbox" id="watermarkCenter" class="mr-2">
+                <span class="text-sm">Tengah</span>
+              </label>
+            </div>
+            <div class="flex items-center gap-4">
+              <label for="watermarkSize" class="text-sm">Saiz Watermark:</label>
+              <input type="range" id="watermarkSize" min="10" max="50" value="20" class="range-slider w-32">
+              <span id="watermarkSizeValue" class="text-sm">20%</span>
+            </div>
+          </div>
         </div>
         
         <div class="flex flex-wrap justify-center gap-3">
           <button onclick="autoBlur()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium shadow">Blur Automatik</button>
+          <button onclick="processAllImages()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow">Blur Semua Gambar</button>
           <button onclick="resetImage()" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium shadow">Reset</button>
           <button onclick="undo()" class="px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-medium shadow">Undo</button>
           <button onclick="redo()" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium shadow">Redo</button>
+          <button onclick="applyWatermarkToCurrent()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium shadow">Tambah Watermark</button>
           <button onclick="downloadImage()" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium shadow">Download</button>
+          <button onclick="downloadAllImages()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow">Download Semua</button>
         </div>
       </div>
 
@@ -201,9 +271,88 @@
     let currentImage;
     let history = [];
     let historyIndex = -1;
-    let blurIntensity = 20; // Kadar kekaburan (untuk filter/pixelate size)
-    let manualBlurSize = 100; // Saiz kawasan blur manual (untuk lebar/tinggi)
-    let blurType = 'gaussian'; // Default blur type
+    let blurIntensity = 20;
+    let manualBlurSize = 100;
+    let blurType = 'gaussian';
+    let images = []; // Array untuk menyimpan semua gambar
+    let currentImageIndex = 0; // Indeks gambar aktif saat ini
+    let watermarkImage = new Image();
+    watermarkImage.crossOrigin = "anonymous";
+    watermarkImage.src = "https://ik.imagekit.io/pyreotmgq/WATERMARK.png?updatedAt=1769143395803";
+    
+    // === Watermark Settings ===
+    let enableWatermark = true;
+    let watermarkPosition = 'bottom-right'; // 'bottom-right', 'center'
+    let watermarkSizePercent = 20;
+
+    // === Initialize Watermark Controls ===
+    function initializeWatermarkControls() {
+      const enableCheckbox = document.getElementById('enableWatermark');
+      const bottomRightCheckbox = document.getElementById('watermarkBottomRight');
+      const centerCheckbox = document.getElementById('watermarkCenter');
+      const sizeSlider = document.getElementById('watermarkSize');
+      const sizeValue = document.getElementById('watermarkSizeValue');
+
+      if (enableCheckbox) {
+        enableCheckbox.addEventListener('change', function() {
+          enableWatermark = this.checked;
+        });
+      }
+
+      if (bottomRightCheckbox && centerCheckbox) {
+        bottomRightCheckbox.addEventListener('change', function() {
+          if (this.checked) {
+            centerCheckbox.checked = false;
+            watermarkPosition = 'bottom-right';
+          }
+        });
+
+        centerCheckbox.addEventListener('change', function() {
+          if (this.checked) {
+            bottomRightCheckbox.checked = false;
+            watermarkPosition = 'center';
+          }
+        });
+      }
+
+      if (sizeSlider && sizeValue) {
+        sizeSlider.addEventListener('input', function() {
+          watermarkSizePercent = parseInt(this.value);
+          sizeValue.textContent = watermarkSizePercent + '%';
+        });
+      }
+    }
+
+    // === Apply Watermark Function ===
+    function applyWatermark(ctx, canvasWidth, canvasHeight) {
+      if (!enableWatermark || watermarkImage.width === 0) return;
+      
+      const watermarkWidth = (canvasWidth * watermarkSizePercent) / 100;
+      const watermarkHeight = (watermarkWidth * watermarkImage.height) / watermarkImage.width;
+      
+      let x, y;
+      
+      if (watermarkPosition === 'center') {
+        x = (canvasWidth - watermarkWidth) / 2;
+        y = (canvasHeight - watermarkHeight) / 2;
+      } else { // bottom-right
+        x = canvasWidth - watermarkWidth - 20;
+        y = canvasHeight - watermarkHeight - 20;
+      }
+      
+      // Add semi-transparent background for better visibility
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillRect(x - 5, y - 5, watermarkWidth + 10, watermarkHeight + 10);
+      ctx.restore();
+      
+      // Draw watermark
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      ctx.drawImage(watermarkImage, x, y, watermarkWidth, watermarkHeight);
+      ctx.restore();
+    }
 
     // === Blur Type Selection ===
     function initializeBlurTypeSelection() {
@@ -211,13 +360,11 @@
       const blurPixelate = document.getElementById('blurPixelate');
       const blurBlackBar = document.getElementById('blurBlackBar');
       
-      // Pastikan elemen ada sebelum menambahkan event listener
       if (blurGaussian && blurPixelate && blurBlackBar) {
         blurGaussian.addEventListener('click', () => setBlurType('gaussian'));
         blurPixelate.addEventListener('click', () => setBlurType('pixelate'));
         blurBlackBar.addEventListener('click', () => setBlurType('blackBar'));
         
-        // Set default active state
         setBlurType('gaussian');
       } else {
         console.error('Salah satu tombol blur tidak ditemukan');
@@ -227,12 +374,10 @@
     function setBlurType(type) {
       blurType = type;
       
-      // Dapatkan semua tombol blur
       const blurGaussian = document.getElementById('blurGaussian');
       const blurPixelate = document.getElementById('blurPixelate');
       const blurBlackBar = document.getElementById('blurBlackBar');
       
-      // Reset semua tombol ke state tidak aktif
       [blurGaussian, blurPixelate, blurBlackBar].forEach(button => {
         if (button) {
           button.classList.remove('active', 'bg-blue-100', 'dark:bg-blue-900', 'text-blue-800', 'dark:text-blue-200');
@@ -240,7 +385,6 @@
         }
       });
       
-      // Set tombol aktif berdasarkan jenis blur
       let activeButton;
       switch(type) {
         case 'gaussian':
@@ -298,7 +442,6 @@
       try {
         showLoading("Memuat model AI...");
         
-        // Menggunakan model dari CDN yang tersedia
         await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
         await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
         
@@ -311,10 +454,58 @@
       }
     }
 
-    // Initialize models when page loads
+    // === Image Management Functions ===
+    function createImagePreview(image, index) {
+      const previewContainer = document.getElementById('imagePreviewContainer');
+      const preview = document.createElement('img');
+      preview.src = URL.createObjectURL(image.file);
+      preview.alt = `Preview ${index + 1}`;
+      preview.className = 'image-preview';
+      preview.dataset.index = index;
+      
+      if (index === currentImageIndex) {
+        preview.classList.add('active');
+      }
+      
+      preview.addEventListener('click', function() {
+        switchImage(parseInt(this.dataset.index));
+      });
+      
+      previewContainer.appendChild(preview);
+    }
+
+    function switchImage(index) {
+      if (index >= 0 && index < images.length) {
+        currentImageIndex = index;
+        currentImage = images[index].image;
+        
+        // Update active state in preview
+        document.querySelectorAll('.image-preview').forEach((preview, i) => {
+          preview.classList.toggle('active', i === index);
+        });
+        
+        // Draw selected image to canvas
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        canvas.width = currentImage.width;
+        canvas.height = currentImage.height;
+        ctx.drawImage(currentImage, 0, 0);
+        
+        // Load history for this image
+        history = images[index].history || [];
+        historyIndex = images[index].historyIndex || -1;
+        
+        // Apply watermark if enabled
+        if (enableWatermark && watermarkImage.complete) {
+          applyWatermark(ctx, canvas.width, canvas.height);
+        }
+      }
+    }
+
+    // === Main Initialization ===
     document.addEventListener('DOMContentLoaded', async () => {
-      // Inisialisasi pemilihan jenis blur
       initializeBlurTypeSelection();
+      initializeWatermarkControls();
       
       if (typeof faceapi === 'undefined') {
         console.error('faceapi tidak didefinisikan.');
@@ -325,27 +516,56 @@
       await loadFaceModels();
       
       const imageUpload = document.getElementById('imageUpload');
+      const previewContainer = document.getElementById('imagePreviewContainer');
+      
       if (imageUpload) {
-        imageUpload.addEventListener('change', handleImageUpload);
+        imageUpload.addEventListener('change', handleMultipleImageUpload);
       }
+      
+      // Wait for watermark to load
+      watermarkImage.onload = function() {
+        console.log('✅ Watermark loaded successfully');
+      };
+      
+      watermarkImage.onerror = function() {
+        console.warn('⚠️ Watermark image failed to load, watermark feature disabled');
+        document.getElementById('enableWatermark').checked = false;
+        enableWatermark = false;
+      };
     });
 
-    // === BLUR FACE FUNCTIONS ===
-    async function handleImageUpload(event) {
-      const input = event.target.files[0];
-      if (!input) return;
+    // === Handle Multiple Image Upload ===
+    async function handleMultipleImageUpload(event) {
+      const files = Array.from(event.target.files);
+      if (files.length === 0) return;
       
-      showLoading("Memuat gambar...");
+      showLoading(`Memuat ${files.length} gambar...`);
       
       try {
-        currentImage = await faceapi.bufferToImage(input);
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        canvas.width = currentImage.width;
-        canvas.height = currentImage.height;
-        ctx.drawImage(currentImage, 0, 0);
-        saveState();
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        previewContainer.innerHTML = '';
+        previewContainer.classList.remove('hidden');
+        
+        images = [];
+        
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const image = await faceapi.bufferToImage(file);
+          images.push({
+            file: file,
+            image: image,
+            history: [],
+            historyIndex: -1,
+            processed: false
+          });
+          
+          createImagePreview(images[i], i);
+        }
+        
+        // Switch to first image
+        switchImage(0);
         hideLoading();
+        
       } catch (error) {
         hideLoading();
         console.error('❌ Gagal memuat gambar:', error);
@@ -353,39 +573,31 @@
       }
     }
 
-    // Function to apply different blur types
+    // === Function to apply different blur types ===
     function applyBlurEffect(ctx, x, y, width, height) {
-      // Pastikan saiz bukan sifar untuk mengelakkan ralat, gunakan min 1
       const effectiveWidth = Math.max(1, width);
       const effectiveHeight = Math.max(1, height);
       
       switch(blurType) {
         case 'gaussian':
-          // Gaussian blur using CSS filter
           ctx.save();
           ctx.beginPath();
-          // Gunakan bentuk elips yang lebih tinggi untuk menutup wajah
           ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2 * 1.1, effectiveHeight/2 * 1.3, 0, 0, 2 * Math.PI);
           ctx.clip();
-          // blurIntensity mengawal kadar kekaburan (Filter size)
-          ctx.filter = `blur(${blurIntensity}px)`; 
+          ctx.filter = `blur(${blurIntensity}px)`;
           ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
           ctx.restore();
           break;
           
         case 'pixelate':
-          // Pixelation effect
-          // blurIntensity mengawal saiz pixel
-          const pixelSize = Math.max(1, Math.floor(blurIntensity / 2)); 
+          const pixelSize = Math.max(1, Math.floor(blurIntensity / 2));
           const smallCanvas = document.createElement('canvas');
           const smallCtx = smallCanvas.getContext('2d');
           
-          // Create a small version of the area
           smallCanvas.width = Math.ceil(effectiveWidth / pixelSize);
           smallCanvas.height = Math.ceil(effectiveHeight / pixelSize);
           smallCtx.drawImage(currentImage, x, y, effectiveWidth, effectiveHeight, 0, 0, smallCanvas.width, smallCanvas.height);
           
-          // Draw the pixelated version back
           ctx.save();
           ctx.beginPath();
           ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2 * 1.1, effectiveHeight/2 * 1.3, 0, 0, 2 * Math.PI);
@@ -396,7 +608,6 @@
           break;
           
         case 'blackBar':
-          // Black bar effect
           ctx.save();
           ctx.beginPath();
           ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2 * 1.1, effectiveHeight/2 * 1.3, 0, 0, 2 * Math.PI);
@@ -427,12 +638,17 @@
         }
         
         detections.forEach(detection => {
-          // autoBlur menggunakan saiz yang dikesan oleh AI (box.width, box.height)
           const box = detection.detection.box;
           applyBlurEffect(ctx, box.x, box.y, box.width, box.height);
         });
         
+        // Apply watermark after blur
+        if (enableWatermark && watermarkImage.complete) {
+          applyWatermark(ctx, canvas.width, canvas.height);
+        }
+        
         saveState();
+        images[currentImageIndex].processed = true;
         hideLoading();
       } catch (error) {
         hideLoading();
@@ -441,7 +657,62 @@
       }
     }
 
-    // Manual blur with click
+    // === Process All Images ===
+    async function processAllImages() {
+      if (images.length === 0) return alert('Muat naik gambar dulu.');
+      
+      showLoading(`Memproses ${images.length} gambar...`);
+      
+      try {
+        for (let i = 0; i < images.length; i++) {
+          // Switch to image
+          switchImage(i);
+          
+          // Process current image
+          const canvas = document.getElementById('canvas');
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          ctx.drawImage(currentImage, 0, 0);
+          
+          // Detect faces
+          const detections = await faceapi.detectAllFaces(currentImage).withFaceLandmarks();
+          
+          // Apply blur to detected faces
+          detections.forEach(detection => {
+            const box = detection.detection.box;
+            applyBlurEffect(ctx, box.x, box.y, box.width, box.height);
+          });
+          
+          // Apply watermark
+          if (enableWatermark && watermarkImage.complete) {
+            applyWatermark(ctx, canvas.width, canvas.height);
+          }
+          
+          // Save processed image data
+          images[i].processedCanvas = canvas.toDataURL();
+          images[i].processed = true;
+          
+          // Update preview with processed image
+          const preview = document.querySelector(`.image-preview[data-index="${i}"]`);
+          if (preview) {
+            preview.src = images[i].processedCanvas;
+          }
+          
+          // Update loading text
+          document.getElementById('loadingText').textContent = 
+            `Memproses gambar ${i + 1} dari ${images.length}...`;
+        }
+        
+        hideLoading();
+        alert(`Berhasil memproses ${images.length} gambar!`);
+        
+      } catch (error) {
+        hideLoading();
+        console.error('❌ Gagal memproses semua gambar:', error);
+        alert('Gagal memproses beberapa gambar.');
+      }
+    }
+
+    // === Manual blur with click ===
     const canvas = document.getElementById('canvas');
     if (canvas) {
       canvas.addEventListener('click', (event) => {
@@ -455,15 +726,39 @@
         
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
-        // Gunakan manualBlurSize untuk saiz kawasan blur
-        // Gunakan Math.max(1, manualBlurSize) untuk memastikan saiz minimum 1px
-        const blurWidth = Math.max(1, manualBlurSize); 
-        const blurHeight = Math.max(1, manualBlurSize * 1.3); // Lebih tinggi sedikit untuk bentuk wajah
+        const blurWidth = Math.max(1, manualBlurSize);
+        const blurHeight = Math.max(1, manualBlurSize * 1.3);
         
         applyBlurEffect(ctx, clickX - blurWidth/2, clickY - blurHeight/2, blurWidth, blurHeight);
         
+        // Apply watermark
+        if (enableWatermark && watermarkImage.complete) {
+          applyWatermark(ctx, canvas.width, canvas.height);
+        }
+        
         saveState();
+        images[currentImageIndex].processed = true;
       });
+    }
+
+    // === Apply Watermark to Current Image ===
+    function applyWatermarkToCurrent() {
+      if (!currentImage) return alert('Muat naik gambar dulu.');
+      
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      
+      // Redraw current image
+      ctx.drawImage(currentImage, 0, 0);
+      
+      // Apply watermark
+      if (enableWatermark && watermarkImage.complete) {
+        applyWatermark(ctx, canvas.width, canvas.height);
+      }
+      
+      saveState();
+      images[currentImageIndex].processed = true;
+      alert('Watermark berhasil ditambahkan!');
     }
 
     function saveState() {
@@ -473,6 +768,12 @@
       }
       history.push(canvas.toDataURL());
       historyIndex++;
+      
+      // Save history to current image
+      if (images[currentImageIndex]) {
+        images[currentImageIndex].history = [...history];
+        images[currentImageIndex].historyIndex = historyIndex;
+      }
     }
 
     function resetImage() {
@@ -481,8 +782,21 @@
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(currentImage, 0, 0);
+      
+      // Apply watermark if enabled
+      if (enableWatermark && watermarkImage.complete) {
+        applyWatermark(ctx, canvas.width, canvas.height);
+      }
+      
       history = [];
       historyIndex = -1;
+      
+      // Update image data
+      if (images[currentImageIndex]) {
+        images[currentImageIndex].history = [];
+        images[currentImageIndex].historyIndex = -1;
+      }
+      
       saveState();
     }
 
@@ -497,6 +811,11 @@
           ctx.drawImage(image, 0, 0);
         };
         image.src = history[historyIndex];
+        
+        // Update image data
+        if (images[currentImageIndex]) {
+          images[currentImageIndex].historyIndex = historyIndex;
+        }
       } else alert('Tidak ada undo.');
     }
 
@@ -511,18 +830,74 @@
           ctx.drawImage(image, 0, 0);
         };
         image.src = history[historyIndex];
+        
+        // Update image data
+        if (images[currentImageIndex]) {
+          images[currentImageIndex].historyIndex = historyIndex;
+        }
       } else alert('Tidak ada redo.');
     }
 
     function downloadImage() {
       const canvas = document.getElementById('canvas');
       if (!canvas.width || !canvas.height) return alert('Tidak ada gambar.');
+      
       const link = document.createElement('a');
-      link.download = 'blurred_image.png';
+      link.download = `blurred_image_${currentImageIndex + 1}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     }
+
+    function downloadAllImages() {
+      if (images.length === 0) return alert('Tidak ada gambar.');
+      
+      showLoading(`Menyiapkan ${images.length} gambar untuk diunduh...`);
+      
+      // Create a zip file
+      const zip = new JSZip();
+      
+      // Process all images
+      images.forEach((img, index) => {
+        if (img.processedCanvas) {
+          // Convert base64 to blob
+          const base64Data = img.processedCanvas.split(',')[1];
+          zip.file(`blurred_image_${index + 1}.png`, base64Data, {base64: true});
+        } else if (img.image) {
+          // Create canvas for unprocessed images
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = img.image.width;
+          tempCanvas.height = img.image.height;
+          const tempCtx = tempCanvas.getContext('2d');
+          tempCtx.drawImage(img.image, 0, 0);
+          
+          // Apply watermark if enabled
+          if (enableWatermark && watermarkImage.complete) {
+            applyWatermark(tempCtx, tempCanvas.width, tempCanvas.height);
+          }
+          
+          const dataURL = tempCanvas.toDataURL('image/png');
+          const base64Data = dataURL.split(',')[1];
+          zip.file(`image_${index + 1}.png`, base64Data, {base64: true});
+        }
+      });
+      
+      // Generate zip file
+      zip.generateAsync({type: "blob"}).then(function(content) {
+        hideLoading();
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = 'blurred_images.zip';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    }
   </script>
+  
+  <!-- Add JSZip library for zip functionality -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
 
