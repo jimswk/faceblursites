@@ -123,6 +123,76 @@
     .dark .watermark-options {
       background: rgba(0, 0, 0, 0.2);
     }
+    .watermark-container {
+      position: relative;
+      border: 1px dashed #3b82f6;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+    .watermark-item {
+      position: absolute;
+      cursor: move;
+      user-select: none;
+      z-index: 10;
+      resize: both;
+      overflow: hidden;
+      min-width: 50px;
+      min-height: 50px;
+      border: 2px solid rgba(59, 130, 246, 0.5);
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .watermark-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    .watermark-controls {
+      position: absolute;
+      top: -30px;
+      right: 0;
+      display: flex;
+      gap: 5px;
+      z-index: 20;
+    }
+    .watermark-control-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .watermark-preview {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      border: 2px solid #e5e7eb;
+      border-radius: 5px;
+      cursor: pointer;
+      padding: 5px;
+    }
+    .watermark-preview.active {
+      border-color: #3b82f6;
+      background-color: rgba(59, 130, 246, 0.1);
+    }
+    .resize-handle {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 15px;
+      height: 15px;
+      background: #3b82f6;
+      cursor: nwse-resize;
+      border-radius: 2px;
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-slate-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
@@ -206,24 +276,50 @@
           <!-- Watermark Options -->
           <div class="watermark-options">
             <label class="block text-sm font-medium mb-2">Watermark Settings:</label>
-            <div class="flex items-center gap-4 mb-3">
-              <label class="flex items-center">
-                <input type="checkbox" id="enableWatermark" class="mr-2" checked>
-                <span class="text-sm">Tambah Watermark</span>
-              </label>
-              <label class="flex items-center">
-                <input type="checkbox" id="watermarkBottomRight" class="mr-2" checked>
-                <span class="text-sm">Sudut Kanan Bawah</span>
-              </label>
-              <label class="flex items-center">
-                <input type="checkbox" id="watermarkCenter" class="mr-2">
-                <span class="text-sm">Tengah</span>
-              </label>
+            
+            <!-- Watermark Type Selection -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Pilih Watermark:</label>
+              <div class="flex flex-wrap gap-3">
+                <div class="flex flex-col items-center">
+                  <img src="https://ik.imagekit.io/pyreotmgq/watermark%20jabatan.png" 
+                       class="watermark-preview active" 
+                       data-type="jabatan"
+                       alt="Watermark Jabatan">
+                  <span class="text-xs mt-1">Jabatan</span>
+                </div>
+                <div class="flex flex-col items-center">
+                  <img src="https://ik.imagekit.io/pyreotmgq/Malaysia%20Madani.png" 
+                       class="watermark-preview" 
+                       data-type="madani"
+                       alt="Malaysia Madani">
+                  <span class="text-xs mt-1">Madani</span>
+                </div>
+                <div class="flex flex-col items-center">
+                  <img src="https://ik.imagekit.io/pyreotmgq/imigresen%20perkasa.png" 
+                       class="watermark-preview" 
+                       data-type="imigresen"
+                       alt="Imigresen">
+                  <span class="text-xs mt-1">Imigresen</span>
+                </div>
+              </div>
             </div>
-            <div class="flex items-center gap-4">
-              <label for="watermarkSize" class="text-sm">Saiz Watermark:</label>
-              <input type="range" id="watermarkSize" min="10" max="50" value="20" class="range-slider w-32">
-              <span id="watermarkSizeValue" class="text-sm">20%</span>
+            
+            <!-- Add Watermark Button -->
+            <button onclick="addWatermark()" class="px-3 py-2 mb-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium">
+              <span class="material-symbols-outlined align-middle" style="font-size: 16px">add</span>
+              Tambah Watermark
+            </button>
+            
+            <!-- Watermark Container -->
+            <div id="watermarkContainer" class="watermark-container min-h-[200px] relative">
+              <!-- Watermark items will be added here -->
+            </div>
+            
+            <!-- Watermark Opacity Control -->
+            <div class="mt-4">
+              <label for="watermarkOpacity" class="block text-sm font-medium mb-2">Kejelasan Watermark: <span id="opacityValue">70</span>%</label>
+              <input type="range" id="watermarkOpacity" min="10" max="100" value="70" class="range-slider">
             </div>
           </div>
         </div>
@@ -234,7 +330,7 @@
           <button onclick="resetImage()" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium shadow">Reset</button>
           <button onclick="undo()" class="px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-medium shadow">Undo</button>
           <button onclick="redo()" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium shadow">Redo</button>
-          <button onclick="applyWatermarkToCurrent()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium shadow">Tambah Watermark</button>
+          <button onclick="applyAllWatermarks()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium shadow">Apply Watermark</button>
           <button onclick="downloadImage()" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium shadow">Download</button>
           <button onclick="downloadAllImages()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow">Download Semua</button>
         </div>
@@ -274,84 +370,391 @@
     let blurIntensity = 20;
     let manualBlurSize = 100;
     let blurType = 'gaussian';
-    let images = []; // Array untuk menyimpan semua gambar
-    let currentImageIndex = 0; // Indeks gambar aktif saat ini
-    let watermarkImage = new Image();
-    watermarkImage.crossOrigin = "anonymous";
-    watermarkImage.src = "https://ik.imagekit.io/pyreotmgq/WATERMARK.png?updatedAt=1769143395803";
+    let images = [];
+    let currentImageIndex = 0;
     
-    // === Watermark Settings ===
-    let enableWatermark = true;
-    let watermarkPosition = 'bottom-right'; // 'bottom-right', 'center'
-    let watermarkSizePercent = 20;
+    // Watermark variables
+    let watermarks = [];
+    let selectedWatermarkType = 'jabatan';
+    let watermarkOpacity = 70;
+    let activeWatermarkElement = null;
+    
+    // Watermark URLs
+    const watermarkUrls = {
+      'jabatan': 'https://ik.imagekit.io/pyreotmgq/watermark%20jabatan.png',
+      'madani': 'https://ik.imagekit.io/pyreotmgq/Malaysia%20Madani.png',
+      'imigresen': 'https://ik.imagekit.io/pyreotmgq/imigresen%20perkasa.png'
+    };
 
     // === Initialize Watermark Controls ===
     function initializeWatermarkControls() {
-      const enableCheckbox = document.getElementById('enableWatermark');
-      const bottomRightCheckbox = document.getElementById('watermarkBottomRight');
-      const centerCheckbox = document.getElementById('watermarkCenter');
-      const sizeSlider = document.getElementById('watermarkSize');
-      const sizeValue = document.getElementById('watermarkSizeValue');
-
-      if (enableCheckbox) {
-        enableCheckbox.addEventListener('change', function() {
-          enableWatermark = this.checked;
+      // Watermark type selection
+      document.querySelectorAll('.watermark-preview').forEach(preview => {
+        preview.addEventListener('click', function() {
+          document.querySelectorAll('.watermark-preview').forEach(p => p.classList.remove('active'));
+          this.classList.add('active');
+          selectedWatermarkType = this.dataset.type;
+        });
+      });
+      
+      // Opacity control
+      const opacitySlider = document.getElementById('watermarkOpacity');
+      const opacityValue = document.getElementById('opacityValue');
+      
+      if (opacitySlider && opacityValue) {
+        opacitySlider.addEventListener('input', function() {
+          watermarkOpacity = parseInt(this.value);
+          opacityValue.textContent = watermarkOpacity + '%';
+          
+          // Update opacity of all watermark items
+          document.querySelectorAll('.watermark-item').forEach(item => {
+            item.style.opacity = watermarkOpacity / 100;
+          });
         });
       }
-
-      if (bottomRightCheckbox && centerCheckbox) {
-        bottomRightCheckbox.addEventListener('change', function() {
-          if (this.checked) {
-            centerCheckbox.checked = false;
-            watermarkPosition = 'bottom-right';
+      
+      // Initialize watermark container
+      const watermarkContainer = document.getElementById('watermarkContainer');
+      watermarkContainer.addEventListener('click', function(e) {
+        if (e.target === this) {
+          // Clicked on container background, deselect active watermark
+          if (activeWatermarkElement) {
+            activeWatermarkElement.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+            activeWatermarkElement = null;
           }
-        });
+        }
+      });
+    }
 
-        centerCheckbox.addEventListener('change', function() {
-          if (this.checked) {
-            bottomRightCheckbox.checked = false;
-            watermarkPosition = 'center';
-          }
-        });
+    // === Add Watermark Function ===
+    function addWatermark() {
+      if (!currentImage) {
+        alert('Muat naik gambar dulu sebelum menambah watermark.');
+        return;
       }
+      
+      const watermarkContainer = document.getElementById('watermarkContainer');
+      
+      // Create watermark element
+      const watermarkId = 'watermark_' + Date.now();
+      const watermarkDiv = document.createElement('div');
+      watermarkDiv.className = 'watermark-item';
+      watermarkDiv.id = watermarkId;
+      watermarkDiv.style.width = '150px';
+      watermarkDiv.style.height = '100px';
+      watermarkDiv.style.left = '50px';
+      watermarkDiv.style.top = '50px';
+      watermarkDiv.style.opacity = watermarkOpacity / 100;
+      
+      // Create image element
+      const img = document.createElement('img');
+      img.src = watermarkUrls[selectedWatermarkType];
+      img.alt = 'Watermark';
+      img.draggable = false;
+      
+      // Create controls
+      const controlsDiv = document.createElement('div');
+      controlsDiv.className = 'watermark-controls';
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'watermark-control-btn';
+      deleteBtn.innerHTML = '×';
+      deleteBtn.title = 'Hapus watermark';
+      deleteBtn.onclick = function(e) {
+        e.stopPropagation();
+        removeWatermark(watermarkId);
+      };
+      
+      controlsDiv.appendChild(deleteBtn);
+      watermarkDiv.appendChild(controlsDiv);
+      watermarkDiv.appendChild(img);
+      
+      // Add resize handle
+      const resizeHandle = document.createElement('div');
+      resizeHandle.className = 'resize-handle';
+      watermarkDiv.appendChild(resizeHandle);
+      
+      // Add to container
+      watermarkContainer.appendChild(watermarkDiv);
+      
+      // Make draggable and resizable
+      makeDraggable(watermarkDiv);
+      makeResizable(watermarkDiv);
+      
+      // Select this watermark
+      selectWatermark(watermarkDiv);
+      
+      // Add to watermarks array
+      watermarks.push({
+        id: watermarkId,
+        type: selectedWatermarkType,
+        x: 50,
+        y: 50,
+        width: 150,
+        height: 100,
+        opacity: watermarkOpacity
+      });
+    }
 
-      if (sizeSlider && sizeValue) {
-        sizeSlider.addEventListener('input', function() {
-          watermarkSizePercent = parseInt(this.value);
-          sizeValue.textContent = watermarkSizePercent + '%';
-        });
+    function removeWatermark(id) {
+      const element = document.getElementById(id);
+      if (element) {
+        element.remove();
+        watermarks = watermarks.filter(w => w.id !== id);
+        
+        if (activeWatermarkElement === element) {
+          activeWatermarkElement = null;
+        }
       }
     }
 
-    // === Apply Watermark Function ===
-    function applyWatermark(ctx, canvasWidth, canvasHeight) {
-      if (!enableWatermark || watermarkImage.width === 0) return;
+    function selectWatermark(element) {
+      if (activeWatermarkElement) {
+        activeWatermarkElement.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+      }
+      activeWatermarkElement = element;
+      element.style.borderColor = 'rgba(59, 130, 246, 1)';
+    }
+
+    function makeDraggable(element) {
+      let isDragging = false;
+      let offsetX, offsetY;
       
-      const watermarkWidth = (canvasWidth * watermarkSizePercent) / 100;
-      const watermarkHeight = (watermarkWidth * watermarkImage.height) / watermarkImage.width;
+      element.addEventListener('mousedown', startDrag);
+      element.addEventListener('touchstart', startDragTouch);
       
-      let x, y;
-      
-      if (watermarkPosition === 'center') {
-        x = (canvasWidth - watermarkWidth) / 2;
-        y = (canvasHeight - watermarkHeight) / 2;
-      } else { // bottom-right
-        x = canvasWidth - watermarkWidth - 20;
-        y = canvasHeight - watermarkHeight - 20;
+      function startDrag(e) {
+        e.preventDefault();
+        isDragging = true;
+        selectWatermark(element);
+        
+        const rect = element.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', stopDrag);
       }
       
-      // Add semi-transparent background for better visibility
-      ctx.save();
-      ctx.globalAlpha = 0.3;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.fillRect(x - 5, y - 5, watermarkWidth + 10, watermarkHeight + 10);
-      ctx.restore();
+      function startDragTouch(e) {
+        if (e.touches.length !== 1) return;
+        
+        e.preventDefault();
+        isDragging = true;
+        selectWatermark(element);
+        
+        const touch = e.touches[0];
+        const rect = element.getBoundingClientRect();
+        offsetX = touch.clientX - rect.left;
+        offsetY = touch.clientY - rect.top;
+        
+        document.addEventListener('touchmove', dragTouch);
+        document.addEventListener('touchend', stopDrag);
+      }
       
-      // Draw watermark
-      ctx.save();
-      ctx.globalAlpha = 0.7;
-      ctx.drawImage(watermarkImage, x, y, watermarkWidth, watermarkHeight);
-      ctx.restore();
+      function drag(e) {
+        if (!isDragging) return;
+        
+        const container = document.getElementById('watermarkContainer');
+        const containerRect = container.getBoundingClientRect();
+        
+        let x = e.clientX - containerRect.left - offsetX;
+        let y = e.clientY - containerRect.top - offsetY;
+        
+        // Keep within container bounds
+        x = Math.max(0, Math.min(x, containerRect.width - element.offsetWidth));
+        y = Math.max(0, Math.min(y, containerRect.height - element.offsetHeight));
+        
+        element.style.left = x + 'px';
+        element.style.top = y + 'px';
+        
+        // Update watermark data
+        updateWatermarkPosition(element.id, x, y);
+      }
+      
+      function dragTouch(e) {
+        if (!isDragging || e.touches.length !== 1) return;
+        
+        const touch = e.touches[0];
+        const container = document.getElementById('watermarkContainer');
+        const containerRect = container.getBoundingClientRect();
+        
+        let x = touch.clientX - containerRect.left - offsetX;
+        let y = touch.clientY - containerRect.top - offsetY;
+        
+        x = Math.max(0, Math.min(x, containerRect.width - element.offsetWidth));
+        y = Math.max(0, Math.min(y, containerRect.height - element.offsetHeight));
+        
+        element.style.left = x + 'px';
+        element.style.top = y + 'px';
+        
+        updateWatermarkPosition(element.id, x, y);
+      }
+      
+      function stopDrag() {
+        isDragging = false;
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('touchmove', dragTouch);
+        document.removeEventListener('mouseup', stopDrag);
+        document.removeEventListener('touchend', stopDrag);
+      }
+    }
+
+    function makeResizable(element) {
+      const resizeHandle = element.querySelector('.resize-handle');
+      let isResizing = false;
+      let startWidth, startHeight, startX, startY;
+      
+      resizeHandle.addEventListener('mousedown', startResize);
+      resizeHandle.addEventListener('touchstart', startResizeTouch);
+      
+      function startResize(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        isResizing = true;
+        selectWatermark(element);
+        
+        startWidth = element.offsetWidth;
+        startHeight = element.offsetHeight;
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        document.addEventListener('mousemove', resize);
+        document.addEventListener('mouseup', stopResize);
+      }
+      
+      function startResizeTouch(e) {
+        if (e.touches.length !== 1) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        isResizing = true;
+        selectWatermark(element);
+        
+        const touch = e.touches[0];
+        startWidth = element.offsetWidth;
+        startHeight = element.offsetHeight;
+        startX = touch.clientX;
+        startY = touch.clientY;
+        
+        document.addEventListener('touchmove', resizeTouch);
+        document.addEventListener('touchend', stopResize);
+      }
+      
+      function resize(e) {
+        if (!isResizing) return;
+        
+        const minSize = 30;
+        const newWidth = Math.max(minSize, startWidth + (e.clientX - startX));
+        const newHeight = Math.max(minSize, startHeight + (e.clientY - startY));
+        
+        element.style.width = newWidth + 'px';
+        element.style.height = newHeight + 'px';
+        
+        updateWatermarkSize(element.id, newWidth, newHeight);
+      }
+      
+      function resizeTouch(e) {
+        if (!isResizing || e.touches.length !== 1) return;
+        
+        const touch = e.touches[0];
+        const minSize = 30;
+        const newWidth = Math.max(minSize, startWidth + (touch.clientX - startX));
+        const newHeight = Math.max(minSize, startHeight + (touch.clientY - startY));
+        
+        element.style.width = newWidth + 'px';
+        element.style.height = newHeight + 'px';
+        
+        updateWatermarkSize(element.id, newWidth, newHeight);
+      }
+      
+      function stopResize() {
+        isResizing = false;
+        document.removeEventListener('mousemove', resize);
+        document.removeEventListener('touchmove', resizeTouch);
+        document.removeEventListener('mouseup', stopResize);
+        document.removeEventListener('touchend', stopResize);
+      }
+    }
+
+    function updateWatermarkPosition(id, x, y) {
+      const watermark = watermarks.find(w => w.id === id);
+      if (watermark) {
+        watermark.x = x;
+        watermark.y = y;
+      }
+    }
+
+    function updateWatermarkSize(id, width, height) {
+      const watermark = watermarks.find(w => w.id === id);
+      if (watermark) {
+        watermark.width = width;
+        watermark.height = height;
+      }
+    }
+
+    // === Apply Watermarks to Image ===
+    function applyAllWatermarks() {
+      if (!currentImage) {
+        alert('Muat naik gambar dulu.');
+        return;
+      }
+      
+      if (watermarks.length === 0) {
+        alert('Tambah watermark dulu dengan menekan "Tambah Watermark".');
+        return;
+      }
+      
+      showLoading('Menambahkan watermark...');
+      
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Redraw current image
+      ctx.drawImage(currentImage, 0, 0);
+      
+      // Get watermark container dimensions for scaling
+      const container = document.getElementById('watermarkContainer');
+      const containerRect = container.getBoundingClientRect();
+      
+      // Scale factor to convert from container to canvas
+      const scaleX = canvas.width / containerRect.width;
+      const scaleY = canvas.height / containerRect.height;
+      
+      // Apply each watermark
+      watermarks.forEach(watermark => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = watermarkUrls[watermark.type];
+        
+        img.onload = function() {
+          // Calculate scaled position and size
+          const x = watermark.x * scaleX;
+          const y = watermark.y * scaleY;
+          const width = watermark.width * scaleX;
+          const height = watermark.height * scaleY;
+          
+          // Apply opacity
+          ctx.save();
+          ctx.globalAlpha = watermark.opacity / 100;
+          
+          // Draw watermark
+          ctx.drawImage(img, x, y, width, height);
+          
+          ctx.restore();
+          
+          saveState();
+          hideLoading();
+        };
+        
+        img.onerror = function() {
+          console.error('Gagal memuat gambar watermark:', watermark.type);
+          hideLoading();
+          alert('Gagal memuat gambar watermark. Coba lagi.');
+        };
+      });
+      
+      images[currentImageIndex].processed = true;
     }
 
     // === Blur Type Selection ===
@@ -495,11 +898,16 @@
         history = images[index].history || [];
         historyIndex = images[index].historyIndex || -1;
         
-        // Apply watermark if enabled
-        if (enableWatermark && watermarkImage.complete) {
-          applyWatermark(ctx, canvas.width, canvas.height);
-        }
+        // Clear watermarks for new image
+        clearWatermarks();
       }
+    }
+
+    function clearWatermarks() {
+      const container = document.getElementById('watermarkContainer');
+      container.innerHTML = '';
+      watermarks = [];
+      activeWatermarkElement = null;
     }
 
     // === Main Initialization ===
@@ -521,17 +929,6 @@
       if (imageUpload) {
         imageUpload.addEventListener('change', handleMultipleImageUpload);
       }
-      
-      // Wait for watermark to load
-      watermarkImage.onload = function() {
-        console.log('✅ Watermark loaded successfully');
-      };
-      
-      watermarkImage.onerror = function() {
-        console.warn('⚠️ Watermark image failed to load, watermark feature disabled');
-        document.getElementById('enableWatermark').checked = false;
-        enableWatermark = false;
-      };
     });
 
     // === Handle Multiple Image Upload ===
@@ -556,7 +953,8 @@
             image: image,
             history: [],
             historyIndex: -1,
-            processed: false
+            processed: false,
+            watermarks: [] // Store watermarks for each image
           });
           
           createImagePreview(images[i], i);
@@ -642,11 +1040,6 @@
           applyBlurEffect(ctx, box.x, box.y, box.width, box.height);
         });
         
-        // Apply watermark after blur
-        if (enableWatermark && watermarkImage.complete) {
-          applyWatermark(ctx, canvas.width, canvas.height);
-        }
-        
         saveState();
         images[currentImageIndex].processed = true;
         hideLoading();
@@ -681,11 +1074,6 @@
             const box = detection.detection.box;
             applyBlurEffect(ctx, box.x, box.y, box.width, box.height);
           });
-          
-          // Apply watermark
-          if (enableWatermark && watermarkImage.complete) {
-            applyWatermark(ctx, canvas.width, canvas.height);
-          }
           
           // Save processed image data
           images[i].processedCanvas = canvas.toDataURL();
@@ -731,34 +1119,9 @@
         
         applyBlurEffect(ctx, clickX - blurWidth/2, clickY - blurHeight/2, blurWidth, blurHeight);
         
-        // Apply watermark
-        if (enableWatermark && watermarkImage.complete) {
-          applyWatermark(ctx, canvas.width, canvas.height);
-        }
-        
         saveState();
         images[currentImageIndex].processed = true;
       });
-    }
-
-    // === Apply Watermark to Current Image ===
-    function applyWatermarkToCurrent() {
-      if (!currentImage) return alert('Muat naik gambar dulu.');
-      
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      
-      // Redraw current image
-      ctx.drawImage(currentImage, 0, 0);
-      
-      // Apply watermark
-      if (enableWatermark && watermarkImage.complete) {
-        applyWatermark(ctx, canvas.width, canvas.height);
-      }
-      
-      saveState();
-      images[currentImageIndex].processed = true;
-      alert('Watermark berhasil ditambahkan!');
     }
 
     function saveState() {
@@ -782,11 +1145,6 @@
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(currentImage, 0, 0);
-      
-      // Apply watermark if enabled
-      if (enableWatermark && watermarkImage.complete) {
-        applyWatermark(ctx, canvas.width, canvas.height);
-      }
       
       history = [];
       historyIndex = -1;
@@ -869,11 +1227,6 @@
           tempCanvas.height = img.image.height;
           const tempCtx = tempCanvas.getContext('2d');
           tempCtx.drawImage(img.image, 0, 0);
-          
-          // Apply watermark if enabled
-          if (enableWatermark && watermarkImage.complete) {
-            applyWatermark(tempCtx, tempCanvas.width, tempCanvas.height);
-          }
           
           const dataURL = tempCanvas.toDataURL('image/png');
           const base64Data = dataURL.split(',')[1];
