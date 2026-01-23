@@ -128,6 +128,19 @@
       border: 1px dashed #3b82f6;
       margin: 10px 0;
       border-radius: 5px;
+      overflow: hidden;
+      background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
+                        linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
+                        linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+    .dark .watermark-container {
+      background-image: linear-gradient(45deg, #333 25%, transparent 25%), 
+                        linear-gradient(-45deg, #333 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #333 75%), 
+                        linear-gradient(-45deg, transparent 75%, #333 75%);
     }
     .watermark-item {
       position: absolute;
@@ -139,7 +152,7 @@
       min-width: 50px;
       min-height: 50px;
       border: 2px solid rgba(59, 130, 246, 0.5);
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: rgba(255, 255, 255, 0.8);
       border-radius: 4px;
       box-sizing: border-box;
     }
@@ -169,17 +182,22 @@
       justify-content: center;
       font-size: 12px;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
-    .watermark-preview {
-      width: 50px;
-      height: 50px;
-      object-fit: contain;
+    .watermark-control-btn:hover {
+      background: #2563eb;
+      transform: scale(1.1);
+    }
+    .watermark-template-preview {
+      width: 60px;
+      height: 30px;
+      object-fit: cover;
       border: 2px solid #e5e7eb;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
-      padding: 5px;
+      padding: 2px;
     }
-    .watermark-preview.active {
+    .watermark-template-preview.active {
       border-color: #3b82f6;
       background-color: rgba(59, 130, 246, 0.1);
     }
@@ -192,6 +210,54 @@
       background: #3b82f6;
       cursor: nwse-resize;
       border-radius: 2px;
+      border: 1px solid white;
+    }
+    .watermark-item.active {
+      border-color: rgba(59, 130, 246, 1);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+      z-index: 11;
+    }
+    .watermark-scale-info {
+      position: absolute;
+      bottom: -25px;
+      left: 0;
+      font-size: 11px;
+      color: #666;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 2px 5px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    .dark .watermark-scale-info {
+      color: #ccc;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    .watermark-preset-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .dark .watermark-preset-btn {
+      background: #374151;
+      color: #f3f4f6;
+      border: 1px solid #4b5563;
+    }
+    .watermark-preset-btn:hover {
+      background: #e5e7eb;
+    }
+    .dark .watermark-preset-btn:hover {
+      background: #4b5563;
+    }
+    .watermark-preset-btn.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
     }
   </style>
 </head>
@@ -275,33 +341,30 @@
           
           <!-- Watermark Options -->
           <div class="watermark-options">
-            <label class="block text-sm font-medium mb-2">Watermark Settings:</label>
+            <label class="block text-sm font-medium mb-2">Watermark Template:</label>
             
-            <!-- Watermark Type Selection -->
+            <!-- Watermark Template Preview -->
             <div class="mb-4">
-              <label class="block text-sm font-medium mb-2">Pilih Watermark:</label>
-              <div class="flex flex-wrap gap-3">
-                <div class="flex flex-col items-center">
-                  <img src="https://ik.imagekit.io/pyreotmgq/watermark%20jabatan.png" 
-                       class="watermark-preview active" 
-                       data-type="jabatan"
-                       alt="Watermark Jabatan">
-                  <span class="text-xs mt-1">Jabatan</span>
-                </div>
-                <div class="flex flex-col items-center">
-                  <img src="https://ik.imagekit.io/pyreotmgq/Malaysia%20Madani.png" 
-                       class="watermark-preview" 
-                       data-type="madani"
-                       alt="Malaysia Madani">
-                  <span class="text-xs mt-1">Madani</span>
-                </div>
-                <div class="flex flex-col items-center">
-                  <img src="https://ik.imagekit.io/pyreotmgq/imigresen%20perkasa.png" 
-                       class="watermark-preview" 
-                       data-type="imigresen"
-                       alt="Imigresen">
-                  <span class="text-xs mt-1">Imigresen</span>
-                </div>
+              <div class="flex items-center gap-2 mb-2">
+                <img src="https://ik.imagekit.io/pyreotmgq/template%20watermark%201.png" 
+                     class="watermark-template-preview active" 
+                     id="watermarkTemplate"
+                     alt="Watermark Template">
+                <span class="text-sm">Template Watermark 1</span>
+              </div>
+              <p class="text-xs text-gray-600 dark:text-gray-400 mb-4">
+                Template akan otomatis menyesuaikan dengan ukuran gambar
+              </p>
+            </div>
+            
+            <!-- Preset Positions -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Posisi Preset:</label>
+              <div class="flex flex-wrap gap-2">
+                <button class="watermark-preset-btn" onclick="applyPresetPosition('full')">Penuh</button>
+                <button class="watermark-preset-btn" onclick="applyPresetPosition('center')">Tengah</button>
+                <button class="watermark-preset-btn" onclick="applyPresetPosition('bottom-right')">Kanan Bawah</button>
+                <button class="watermark-preset-btn" onclick="applyPresetPosition('top-left')">Kiri Atas</button>
               </div>
             </div>
             
@@ -313,13 +376,30 @@
             
             <!-- Watermark Container -->
             <div id="watermarkContainer" class="watermark-container min-h-[200px] relative">
-              <!-- Watermark items will be added here -->
+              <!-- Watermark akan ditampilkan di sini -->
+              <div class="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600">
+                <div class="text-center">
+                  <span class="material-symbols-outlined text-4xl mb-2">photo_filter</span>
+                  <p class="text-sm">Klik "Tambah Watermark" untuk menambahkan<br>template ke gambar</p>
+                </div>
+              </div>
             </div>
             
-            <!-- Watermark Opacity Control -->
-            <div class="mt-4">
-              <label for="watermarkOpacity" class="block text-sm font-medium mb-2">Kejelasan Watermark: <span id="opacityValue">70</span>%</label>
-              <input type="range" id="watermarkOpacity" min="10" max="100" value="70" class="range-slider">
+            <!-- Watermark Controls -->
+            <div class="mt-4 grid grid-cols-2 gap-4">
+              <div>
+                <label for="watermarkOpacity" class="block text-sm font-medium mb-2">Kejelasan: <span id="opacityValue">70</span>%</label>
+                <input type="range" id="watermarkOpacity" min="10" max="100" value="70" class="range-slider">
+              </div>
+              <div>
+                <label for="watermarkScale" class="block text-sm font-medium mb-2">Skala: <span id="scaleValue">100</span>%</label>
+                <input type="range" id="watermarkScale" min="10" max="200" value="100" class="range-slider">
+              </div>
+            </div>
+            
+            <!-- Scale Info -->
+            <div id="scaleInfo" class="mt-2 text-xs text-gray-600 dark:text-gray-400 hidden">
+              Skala relatif: <span id="relativeScale">0%</span> dari gambar
             </div>
           </div>
         </div>
@@ -375,27 +455,30 @@
     
     // Watermark variables
     let watermarks = [];
-    let selectedWatermarkType = 'jabatan';
+    let selectedWatermarkType = 'template';
     let watermarkOpacity = 70;
+    let watermarkScale = 100; // Scale relative to container
     let activeWatermarkElement = null;
+    let watermarkTemplate = null;
     
-    // Watermark URLs
-    const watermarkUrls = {
-      'jabatan': 'https://ik.imagekit.io/pyreotmgq/watermark%20jabatan.png',
-      'madani': 'https://ik.imagekit.io/pyreotmgq/Malaysia%20Madani.png',
-      'imigresen': 'https://ik.imagekit.io/pyreotmgq/imigresen%20perkasa.png'
-    };
+    // Watermark URL
+    const watermarkUrl = 'https://ik.imagekit.io/pyreotmgq/template%20watermark%201.png';
 
     // === Initialize Watermark Controls ===
     function initializeWatermarkControls() {
-      // Watermark type selection
-      document.querySelectorAll('.watermark-preview').forEach(preview => {
-        preview.addEventListener('click', function() {
-          document.querySelectorAll('.watermark-preview').forEach(p => p.classList.remove('active'));
-          this.classList.add('active');
-          selectedWatermarkType = this.dataset.type;
-        });
-      });
+      // Load watermark template
+      watermarkTemplate = new Image();
+      watermarkTemplate.crossOrigin = "anonymous";
+      watermarkTemplate.src = watermarkUrl;
+      
+      watermarkTemplate.onload = function() {
+        console.log('✅ Watermark template loaded successfully');
+      };
+      
+      watermarkTemplate.onerror = function() {
+        console.error('❌ Failed to load watermark template');
+        alert('Gagal memuat template watermark. Fitur watermark mungkin tidak berfungsi.');
+      };
       
       // Opacity control
       const opacitySlider = document.getElementById('watermarkOpacity');
@@ -406,10 +489,64 @@
           watermarkOpacity = parseInt(this.value);
           opacityValue.textContent = watermarkOpacity + '%';
           
-          // Update opacity of all watermark items
-          document.querySelectorAll('.watermark-item').forEach(item => {
-            item.style.opacity = watermarkOpacity / 100;
-          });
+          // Update opacity of active watermark
+          if (activeWatermarkElement) {
+            activeWatermarkElement.style.opacity = watermarkOpacity / 100;
+            updateWatermarkOpacity(activeWatermarkElement.id, watermarkOpacity);
+          }
+        });
+      }
+      
+      // Scale control
+      const scaleSlider = document.getElementById('watermarkScale');
+      const scaleValue = document.getElementById('scaleValue');
+      
+      if (scaleSlider && scaleValue) {
+        scaleSlider.addEventListener('input', function() {
+          watermarkScale = parseInt(this.value);
+          scaleValue.textContent = watermarkScale + '%';
+          
+          // Update scale of active watermark
+          if (activeWatermarkElement) {
+            const watermarkId = activeWatermarkElement.id;
+            const watermark = watermarks.find(w => w.id === watermarkId);
+            if (watermark) {
+              const container = document.getElementById('watermarkContainer');
+              const containerWidth = container.clientWidth;
+              
+              // Calculate new dimensions based on scale
+              const newWidth = (containerWidth * watermarkScale) / 100;
+              const aspectRatio = watermarkTemplate.height / watermarkTemplate.width;
+              const newHeight = newWidth * aspectRatio;
+              
+              // Update element size
+              activeWatermarkElement.style.width = newWidth + 'px';
+              activeWatermarkElement.style.height = newHeight + 'px';
+              
+              // Keep center position
+              const rect = activeWatermarkElement.getBoundingClientRect();
+              const containerRect = container.getBoundingClientRect();
+              const currentCenterX = rect.left + rect.width/2;
+              const currentCenterY = rect.top + rect.height/2;
+              
+              const newX = (currentCenterX - containerRect.left) - newWidth/2;
+              const newY = (currentCenterY - containerRect.top) - newHeight/2;
+              
+              // Keep within bounds
+              const boundedX = Math.max(0, Math.min(newX, containerRect.width - newWidth));
+              const boundedY = Math.max(0, Math.min(newY, containerRect.height - newHeight));
+              
+              activeWatermarkElement.style.left = boundedX + 'px';
+              activeWatermarkElement.style.top = boundedY + 'px';
+              
+              // Update watermark data
+              updateWatermarkSize(watermarkId, newWidth, newHeight);
+              updateWatermarkPosition(watermarkId, boundedX, boundedY);
+              
+              // Update scale info
+              updateScaleInfo();
+            }
+          }
         });
       }
       
@@ -419,11 +556,38 @@
         if (e.target === this) {
           // Clicked on container background, deselect active watermark
           if (activeWatermarkElement) {
-            activeWatermarkElement.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+            activeWatermarkElement.classList.remove('active');
             activeWatermarkElement = null;
           }
         }
       });
+    }
+
+    // === Calculate relative scale ===
+    function updateScaleInfo() {
+      if (!currentImage || watermarks.length === 0) return;
+      
+      const watermark = watermarks[0]; // Get first watermark
+      const scaleInfo = document.getElementById('scaleInfo');
+      const relativeScaleSpan = document.getElementById('relativeScale');
+      
+      if (watermark && scaleInfo && relativeScaleSpan) {
+        // Calculate relative scale compared to image
+        const imageWidth = currentImage.width;
+        const containerWidth = document.getElementById('watermarkContainer').clientWidth;
+        
+        // Scale from container to image
+        const scaleToImage = imageWidth / containerWidth;
+        
+        // Watermark size on image
+        const watermarkOnImageWidth = watermark.width * scaleToImage;
+        
+        // Percentage of image width
+        const relativeScalePercent = Math.round((watermarkOnImageWidth / imageWidth) * 100);
+        
+        relativeScaleSpan.textContent = relativeScalePercent + '%';
+        scaleInfo.classList.remove('hidden');
+      }
     }
 
     // === Add Watermark Function ===
@@ -433,23 +597,42 @@
         return;
       }
       
+      if (!watermarkTemplate.complete) {
+        alert('Template watermark sedang dimuat. Tunggu sebentar...');
+        return;
+      }
+      
       const watermarkContainer = document.getElementById('watermarkContainer');
+      
+      // Clear existing watermarks (we'll only have one at a time)
+      clearWatermarks();
       
       // Create watermark element
       const watermarkId = 'watermark_' + Date.now();
       const watermarkDiv = document.createElement('div');
-      watermarkDiv.className = 'watermark-item';
+      watermarkDiv.className = 'watermark-item active';
       watermarkDiv.id = watermarkId;
-      watermarkDiv.style.width = '150px';
-      watermarkDiv.style.height = '100px';
-      watermarkDiv.style.left = '50px';
-      watermarkDiv.style.top = '50px';
+      
+      // Calculate initial size based on container
+      const containerWidth = watermarkContainer.clientWidth;
+      const initialWidth = (containerWidth * watermarkScale) / 100;
+      const aspectRatio = watermarkTemplate.height / watermarkTemplate.width;
+      const initialHeight = initialWidth * aspectRatio;
+      
+      // Center position
+      const centerX = (containerWidth - initialWidth) / 2;
+      const centerY = (watermarkContainer.clientHeight - initialHeight) / 2;
+      
+      watermarkDiv.style.width = initialWidth + 'px';
+      watermarkDiv.style.height = initialHeight + 'px';
+      watermarkDiv.style.left = centerX + 'px';
+      watermarkDiv.style.top = centerY + 'px';
       watermarkDiv.style.opacity = watermarkOpacity / 100;
       
       // Create image element
       const img = document.createElement('img');
-      img.src = watermarkUrls[selectedWatermarkType];
-      img.alt = 'Watermark';
+      img.src = watermarkUrl;
+      img.alt = 'Watermark Template';
       img.draggable = false;
       
       // Create controls
@@ -474,7 +657,14 @@
       resizeHandle.className = 'resize-handle';
       watermarkDiv.appendChild(resizeHandle);
       
+      // Add scale info
+      const scaleInfoDiv = document.createElement('div');
+      scaleInfoDiv.className = 'watermark-scale-info';
+      scaleInfoDiv.id = watermarkId + '_scale';
+      watermarkDiv.appendChild(scaleInfoDiv);
+      
       // Add to container
+      watermarkContainer.querySelector('.absolute').remove(); // Remove placeholder
       watermarkContainer.appendChild(watermarkDiv);
       
       // Make draggable and resizable
@@ -487,13 +677,17 @@
       // Add to watermarks array
       watermarks.push({
         id: watermarkId,
-        type: selectedWatermarkType,
-        x: 50,
-        y: 50,
-        width: 150,
-        height: 100,
-        opacity: watermarkOpacity
+        type: 'template',
+        x: centerX,
+        y: centerY,
+        width: initialWidth,
+        height: initialHeight,
+        opacity: watermarkOpacity,
+        scale: watermarkScale
       });
+      
+      // Update scale info
+      updateScaleInfo();
     }
 
     function removeWatermark(id) {
@@ -505,15 +699,55 @@
         if (activeWatermarkElement === element) {
           activeWatermarkElement = null;
         }
+        
+        // Show placeholder if no watermarks
+        if (watermarks.length === 0) {
+          const container = document.getElementById('watermarkContainer');
+          const placeholder = document.createElement('div');
+          placeholder.className = 'absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600';
+          placeholder.innerHTML = `
+            <div class="text-center">
+              <span class="material-symbols-outlined text-4xl mb-2">photo_filter</span>
+              <p class="text-sm">Klik "Tambah Watermark" untuk menambahkan<br>template ke gambar</p>
+            </div>
+          `;
+          container.appendChild(placeholder);
+        }
       }
     }
 
     function selectWatermark(element) {
       if (activeWatermarkElement) {
-        activeWatermarkElement.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+        activeWatermarkElement.classList.remove('active');
       }
       activeWatermarkElement = element;
-      element.style.borderColor = 'rgba(59, 130, 246, 1)';
+      element.classList.add('active');
+      
+      // Update controls to match selected watermark
+      const watermark = watermarks.find(w => w.id === element.id);
+      if (watermark) {
+        // Update opacity slider
+        const opacitySlider = document.getElementById('watermarkOpacity');
+        const opacityValue = document.getElementById('opacityValue');
+        if (opacitySlider && opacityValue) {
+          opacitySlider.value = watermark.opacity;
+          opacityValue.textContent = watermark.opacity + '%';
+          watermarkOpacity = watermark.opacity;
+        }
+        
+        // Update scale slider
+        const scaleSlider = document.getElementById('watermarkScale');
+        const scaleValue = document.getElementById('scaleValue');
+        if (scaleSlider && scaleValue) {
+          const containerWidth = document.getElementById('watermarkContainer').clientWidth;
+          const currentScale = Math.round((watermark.width / containerWidth) * 100);
+          scaleSlider.value = currentScale;
+          scaleValue.textContent = currentScale + '%';
+          watermarkScale = currentScale;
+        }
+        
+        updateScaleInfo();
+      }
     }
 
     function makeDraggable(element) {
@@ -570,6 +804,7 @@
         
         // Update watermark data
         updateWatermarkPosition(element.id, x, y);
+        updateScaleInfo();
       }
       
       function dragTouch(e) {
@@ -589,6 +824,7 @@
         element.style.top = y + 'px';
         
         updateWatermarkPosition(element.id, x, y);
+        updateScaleInfo();
       }
       
       function stopDrag() {
@@ -646,12 +882,29 @@
         
         const minSize = 30;
         const newWidth = Math.max(minSize, startWidth + (e.clientX - startX));
-        const newHeight = Math.max(minSize, startHeight + (e.clientY - startY));
+        
+        // Maintain aspect ratio
+        const aspectRatio = watermarkTemplate.height / watermarkTemplate.width;
+        const newHeight = newWidth * aspectRatio;
         
         element.style.width = newWidth + 'px';
         element.style.height = newHeight + 'px';
         
         updateWatermarkSize(element.id, newWidth, newHeight);
+        updateScaleInfo();
+        
+        // Update scale slider
+        const container = document.getElementById('watermarkContainer');
+        const containerWidth = container.clientWidth;
+        const currentScale = Math.round((newWidth / containerWidth) * 100);
+        
+        const scaleSlider = document.getElementById('watermarkScale');
+        const scaleValue = document.getElementById('scaleValue');
+        if (scaleSlider && scaleValue) {
+          scaleSlider.value = currentScale;
+          scaleValue.textContent = currentScale + '%';
+          watermarkScale = currentScale;
+        }
       }
       
       function resizeTouch(e) {
@@ -660,12 +913,27 @@
         const touch = e.touches[0];
         const minSize = 30;
         const newWidth = Math.max(minSize, startWidth + (touch.clientX - startX));
-        const newHeight = Math.max(minSize, startHeight + (touch.clientY - startY));
+        
+        const aspectRatio = watermarkTemplate.height / watermarkTemplate.width;
+        const newHeight = newWidth * aspectRatio;
         
         element.style.width = newWidth + 'px';
         element.style.height = newHeight + 'px';
         
         updateWatermarkSize(element.id, newWidth, newHeight);
+        updateScaleInfo();
+        
+        const container = document.getElementById('watermarkContainer');
+        const containerWidth = container.clientWidth;
+        const currentScale = Math.round((newWidth / containerWidth) * 100);
+        
+        const scaleSlider = document.getElementById('watermarkScale');
+        const scaleValue = document.getElementById('scaleValue');
+        if (scaleSlider && scaleValue) {
+          scaleSlider.value = currentScale;
+          scaleValue.textContent = currentScale + '%';
+          watermarkScale = currentScale;
+        }
       }
       
       function stopResize() {
@@ -690,7 +958,100 @@
       if (watermark) {
         watermark.width = width;
         watermark.height = height;
+        
+        // Update scale
+        const container = document.getElementById('watermarkContainer');
+        const containerWidth = container.clientWidth;
+        watermark.scale = Math.round((width / containerWidth) * 100);
       }
+    }
+
+    function updateWatermarkOpacity(id, opacity) {
+      const watermark = watermarks.find(w => w.id === id);
+      if (watermark) {
+        watermark.opacity = opacity;
+      }
+    }
+
+    // === Apply Preset Positions ===
+    function applyPresetPosition(preset) {
+      if (watermarks.length === 0) {
+        alert('Tambah watermark dulu.');
+        return;
+      }
+      
+      const watermark = watermarks[0]; // Get first watermark
+      const element = document.getElementById(watermark.id);
+      if (!element) return;
+      
+      const container = document.getElementById('watermarkContainer');
+      const containerRect = container.getBoundingClientRect();
+      
+      let x, y, width, height;
+      
+      switch(preset) {
+        case 'full':
+          // Full container with padding
+          const padding = 10;
+          x = padding;
+          y = padding;
+          width = containerRect.width - (padding * 2);
+          height = containerRect.height - (padding * 2);
+          break;
+          
+        case 'center':
+          // Center (50% of container)
+          width = containerRect.width * 0.5;
+          const aspectRatio = watermarkTemplate.height / watermarkTemplate.width;
+          height = width * aspectRatio;
+          x = (containerRect.width - width) / 2;
+          y = (containerRect.height - height) / 2;
+          break;
+          
+        case 'bottom-right':
+          // Bottom right with padding
+          const paddingBR = 20;
+          width = containerRect.width * 0.3;
+          const aspectRatioBR = watermarkTemplate.height / watermarkTemplate.width;
+          height = width * aspectRatioBR;
+          x = containerRect.width - width - paddingBR;
+          y = containerRect.height - height - paddingBR;
+          break;
+          
+        case 'top-left':
+          // Top left with padding
+          const paddingTL = 20;
+          width = containerRect.width * 0.3;
+          const aspectRatioTL = watermarkTemplate.height / watermarkTemplate.width;
+          height = width * aspectRatioTL;
+          x = paddingTL;
+          y = paddingTL;
+          break;
+      }
+      
+      // Apply new position and size
+      element.style.width = width + 'px';
+      element.style.height = height + 'px';
+      element.style.left = x + 'px';
+      element.style.top = y + 'px';
+      
+      // Update watermark data
+      updateWatermarkPosition(watermark.id, x, y);
+      updateWatermarkSize(watermark.id, width, height);
+      
+      // Update scale slider
+      const containerWidth = container.clientWidth;
+      const currentScale = Math.round((width / containerWidth) * 100);
+      
+      const scaleSlider = document.getElementById('watermarkScale');
+      const scaleValue = document.getElementById('scaleValue');
+      if (scaleSlider && scaleValue) {
+        scaleSlider.value = currentScale;
+        scaleValue.textContent = currentScale + '%';
+        watermarkScale = currentScale;
+      }
+      
+      updateScaleInfo();
     }
 
     // === Apply Watermarks to Image ===
@@ -705,7 +1066,7 @@
         return;
       }
       
-      showLoading('Menambahkan watermark...');
+      showLoading('Menambahkan watermark ke gambar...');
       
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
@@ -721,13 +1082,14 @@
       const scaleX = canvas.width / containerRect.width;
       const scaleY = canvas.height / containerRect.height;
       
-      // Apply each watermark
-      watermarks.forEach(watermark => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.src = watermarkUrls[watermark.type];
-        
-        img.onload = function() {
+      // Create temporary image for watermark
+      const tempImg = new Image();
+      tempImg.crossOrigin = "anonymous";
+      tempImg.src = watermarkUrl;
+      
+      tempImg.onload = function() {
+        // Apply each watermark
+        watermarks.forEach(watermark => {
           // Calculate scaled position and size
           const x = watermark.x * scaleX;
           const y = watermark.y * scaleY;
@@ -739,22 +1101,22 @@
           ctx.globalAlpha = watermark.opacity / 100;
           
           // Draw watermark
-          ctx.drawImage(img, x, y, width, height);
+          ctx.drawImage(tempImg, x, y, width, height);
           
           ctx.restore();
-          
-          saveState();
-          hideLoading();
-        };
+        });
         
-        img.onerror = function() {
-          console.error('Gagal memuat gambar watermark:', watermark.type);
-          hideLoading();
-          alert('Gagal memuat gambar watermark. Coba lagi.');
-        };
-      });
+        saveState();
+        images[currentImageIndex].processed = true;
+        hideLoading();
+        alert('Watermark berhasil ditambahkan ke gambar!');
+      };
       
-      images[currentImageIndex].processed = true;
+      tempImg.onerror = function() {
+        console.error('Gagal memuat gambar watermark');
+        hideLoading();
+        alert('Gagal memuat gambar watermark. Coba lagi.');
+      };
     }
 
     // === Blur Type Selection ===
@@ -900,6 +1262,9 @@
         
         // Clear watermarks for new image
         clearWatermarks();
+        
+        // Update scale info
+        updateScaleInfo();
       }
     }
 
@@ -908,6 +1273,40 @@
       container.innerHTML = '';
       watermarks = [];
       activeWatermarkElement = null;
+      
+      // Add placeholder
+      const placeholder = document.createElement('div');
+      placeholder.className = 'absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600';
+      placeholder.innerHTML = `
+        <div class="text-center">
+          <span class="material-symbols-outlined text-4xl mb-2">photo_filter</span>
+          <p class="text-sm">Klik "Tambah Watermark" untuk menambahkan<br>template ke gambar</p>
+        </div>
+      `;
+      container.appendChild(placeholder);
+      
+      // Reset controls to default
+      const opacitySlider = document.getElementById('watermarkOpacity');
+      const opacityValue = document.getElementById('opacityValue');
+      if (opacitySlider && opacityValue) {
+        opacitySlider.value = 70;
+        opacityValue.textContent = '70%';
+        watermarkOpacity = 70;
+      }
+      
+      const scaleSlider = document.getElementById('watermarkScale');
+      const scaleValue = document.getElementById('scaleValue');
+      if (scaleSlider && scaleValue) {
+        scaleSlider.value = 100;
+        scaleValue.textContent = '100%';
+        watermarkScale = 100;
+      }
+      
+      // Hide scale info
+      const scaleInfo = document.getElementById('scaleInfo');
+      if (scaleInfo) {
+        scaleInfo.classList.add('hidden');
+      }
     }
 
     // === Main Initialization ===
@@ -954,7 +1353,7 @@
             history: [],
             historyIndex: -1,
             processed: false,
-            watermarks: [] // Store watermarks for each image
+            watermarks: []
           });
           
           createImagePreview(images[i], i);
