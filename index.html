@@ -2,7 +2,7 @@
 <html lang="id" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Fast Face Blur UPSKK</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -17,6 +17,7 @@
   <style>
     body {
       font-family: 'Space Grotesk', sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
     .range-slider {
       -webkit-appearance: none;
@@ -29,15 +30,15 @@
     .range-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       background: #3b82f6;
       cursor: pointer;
     }
     .range-slider::-moz-range-thumb {
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       background: #3b82f6;
       cursor: pointer;
@@ -49,8 +50,8 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      z-index: 100;
+      background-color: rgba(0, 0, 0, 0.85);
+      z-index: 1000;
       justify-content: center;
       align-items: center;
       flex-direction: column;
@@ -60,27 +61,31 @@
       border: 4px solid rgba(255, 255, 255, 0.3);
       border-radius: 50%;
       border-top: 4px solid white;
-      width: 40px;
-      height: 40px;
+      width: 50px;
+      height: 50px;
       animation: spin 1s linear infinite;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
     .control-panel {
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 10px;
-      padding: 15px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 20px;
       margin-bottom: 20px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     .dark .control-panel {
-      background: white;
+      background: rgba(30, 30, 40, 0.95);
     }
     .blur-option {
       transition: all 0.2s ease;
+      padding: 12px 16px;
+      font-size: 14px;
+      flex: 1;
+      min-width: 0;
     }
     .blur-option.active {
       background-color: #3b82f6;
@@ -88,202 +93,157 @@
     }
     .image-preview-container {
       display: flex;
-      flex-wrap: wrap;
       gap: 10px;
-      margin-top: 20px;
-      max-height: 200px;
-      overflow-y: auto;
+      margin-top: 15px;
+      overflow-x: auto;
       padding: 10px;
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
+      border-radius: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .dark .image-preview-container {
+      border-color: #4b5563;
     }
     .image-preview {
-      width: 80px;
-      height: 80px;
+      width: 70px;
+      height: 70px;
       object-fit: cover;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       border: 2px solid transparent;
       transition: all 0.2s ease;
+      flex-shrink: 0;
     }
-    .image-preview:hover {
+    .image-preview:hover, .image-preview:active {
       transform: scale(1.05);
     }
     .image-preview.active {
       border-color: #3b82f6;
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
     }
-    .watermark-options {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
-      padding: 15px;
-      margin-top: 15px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .dark .watermark-options {
-      background: rgba(0, 0, 0, 0.2);
-    }
-    .watermark-container {
-      position: relative;
-      border: 1px dashed #3b82f6;
-      margin: 10px 0;
-      border-radius: 5px;
-      overflow: hidden;
-      background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
-                        linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
-                        linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
-                        linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
-      background-size: 20px 20px;
-      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-    }
-    .dark .watermark-container {
-      background-image: linear-gradient(45deg, #333 25%, transparent 25%), 
-                        linear-gradient(-45deg, #333 25%, transparent 25%), 
-                        linear-gradient(45deg, transparent 75%, #333 75%), 
-                        linear-gradient(-45deg, transparent 75%, #333 75%);
-    }
-    .watermark-item {
-      position: absolute;
-      cursor: move;
-      user-select: none;
-      z-index: 10;
-      resize: both;
-      overflow: hidden;
-      min-width: 50px;
-      min-height: 50px;
-      border: 2px solid rgba(59, 130, 246, 0.5);
-      background-color: rgba(255, 255, 255, 0.8);
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    .watermark-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      pointer-events: none;
-    }
-    .watermark-controls {
-      position: absolute;
-      top: -30px;
-      right: 0;
-      display: flex;
+    .image-orientation {
+      display: inline-flex;
+      align-items: center;
       gap: 5px;
-      z-index: 20;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
     }
-    .watermark-control-btn {
-      width: 24px;
-      height: 24px;
+    .dark .image-orientation {
+      background: #374151;
+      border-color: #4b5563;
+      color: #f3f4f6;
+    }
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #f5f5f5;
+      border: 1px solid #e5e7eb;
+    }
+    .dark .canvas-container {
+      background: #1f2937;
+      border-color: #374151;
+    }
+    canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      touch-action: none;
+    }
+    .canvas-controls {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      transform: translateY(-50%);
+      display: flex;
+      justify-content: space-between;
+      padding: 0 10px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .canvas-control-btn {
+      pointer-events: auto;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
-      background: #3b82f6;
+      background: rgba(59, 130, 246, 0.9);
       color: white;
       border: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 20px;
       cursor: pointer;
       transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
-    .watermark-control-btn:hover {
-      background: #2563eb;
-      transform: scale(1.1);
+    .canvas-control-btn:active {
+      transform: scale(0.95);
+      background: rgba(37, 99, 235, 0.9);
     }
-    .watermark-template-preview {
-      width: 60px;
-      height: 30px;
-      object-fit: cover;
-      border: 2px solid #e5e7eb;
-      border-radius: 4px;
-      cursor: pointer;
-      padding: 2px;
-    }
-    .watermark-template-preview.active {
-      border-color: #3b82f6;
-      background-color: rgba(59, 130, 246, 0.1);
-    }
-    .resize-handle {
+    .image-counter {
       position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 15px;
-      height: 15px;
-      background: #3b82f6;
-      cursor: nwse-resize;
-      border-radius: 2px;
-      border: 1px solid white;
-    }
-    .watermark-item.active {
-      border-color: rgba(59, 130, 246, 1);
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-      z-index: 11;
-    }
-    .watermark-scale-info {
-      position: absolute;
-      bottom: -25px;
-      left: 0;
-      font-size: 11px;
-      color: #666;
-      background: rgba(255, 255, 255, 0.9);
-      padding: 2px 5px;
-      border-radius: 3px;
-      white-space: nowrap;
-    }
-    .dark .watermark-scale-info {
-      color: #ccc;
+      top: 15px;
+      right: 15px;
       background: rgba(0, 0, 0, 0.7);
-    }
-    .watermark-preset-btn {
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      background: #f3f4f6;
-      color: #374151;
-      border: 1px solid #d1d5db;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .dark .watermark-preset-btn {
-      background: #374151;
-      color: #f3f4f6;
-      border: 1px solid #4b5563;
-    }
-    .watermark-preset-btn:hover {
-      background: #e5e7eb;
-    }
-    .dark .watermark-preset-btn:hover {
-      background: #4b5563;
-    }
-    .watermark-preset-btn.active {
-      background: #3b82f6;
       color: white;
-      border-color: #3b82f6;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 10;
+    }
+    .touch-hint {
+      position: absolute;
+      bottom: 15px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: white;
+      font-size: 13px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px;
+      border-radius: 8px;
+      margin: 0 20px;
+      z-index: 10;
+      backdrop-filter: blur(4px);
     }
     .process-steps {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 15px;
+      justify-content: space-between;
+      gap: 5px;
+      margin-bottom: 20px;
+      padding: 0 10px;
     }
     .step-indicator {
       display: flex;
       flex-direction: column;
       align-items: center;
+      flex: 1;
+      min-width: 0;
     }
     .step-circle {
-      width: 30px;
-      height: 30px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: bold;
-      margin-bottom: 5px;
+      font-size: 16px;
+      margin-bottom: 8px;
     }
     .step-circle.active {
       background: #3b82f6;
       color: white;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
     }
     .step-circle.completed {
       background: #10b981;
@@ -296,58 +256,159 @@
     .step-label {
       font-size: 11px;
       text-align: center;
+      line-height: 1.2;
+      color: #6b7280;
+    }
+    .dark .step-label {
+      color: #9ca3af;
+    }
+    .step-label.active {
+      color: #3b82f6;
+      font-weight: 600;
+    }
+    .dark .step-label.active {
+      color: #60a5fa;
     }
     .step-connector {
-      width: 40px;
       height: 2px;
       background: #d1d5db;
-      margin-top: 15px;
+      margin-top: 18px;
+      flex: 1;
+    }
+    .dark .step-connector {
+      background: #4b5563;
     }
     .step-connector.active {
       background: #3b82f6;
     }
-    .image-orientation {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 500;
-      background: #f3f4f6;
-      border: 1px solid #d1d5db;
-    }
-    .dark .image-orientation {
-      background: #374151;
-      border-color: #4b5563;
-      color: #f3f4f6;
-    }
-    .watermark-preview-container {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-      align-items: center;
-    }
-    .watermark-type-btn {
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      background: #f3f4f6;
-      color: #374151;
-      border: 1px solid #d1d5db;
+    .action-btn {
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      border: none;
       cursor: pointer;
       transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 52px;
+      touch-action: manipulation;
     }
-    .watermark-type-btn.active {
+    .action-btn:active {
+      transform: translateY(2px);
+    }
+    .btn-primary {
       background: #3b82f6;
       color: white;
-      border-color: #3b82f6;
     }
-    .dark .watermark-type-btn {
-      background: #374151;
+    .btn-primary:active {
+      background: #2563eb;
+    }
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+    .btn-secondary:active {
+      background: #4b5563;
+    }
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+    .btn-success:active {
+      background: #059669;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-danger:active {
+      background: #dc2626;
+    }
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+    }
+    .btn-warning:active {
+      background: #d97706;
+    }
+    .btn-icon {
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+    }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+    @media (max-width: 640px) {
+      .controls-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .action-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+        min-height: 48px;
+      }
+    }
+    .slide-enter {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    .slide-enter-active {
+      opacity: 1;
+      transform: translateX(0);
+      transition: opacity 300ms, transform 300ms;
+    }
+    .slide-exit {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .slide-exit-active {
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: opacity 300ms, transform 300ms;
+    }
+    input[type="file"] {
+      width: 100%;
+      padding: 15px;
+      border: 2px dashed #3b82f6;
+      border-radius: 12px;
+      background: rgba(59, 130, 246, 0.05);
+      color: #374151;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 20px;
+    }
+    .dark input[type="file"] {
+      background: rgba(59, 130, 246, 0.1);
       color: #f3f4f6;
-      border: 1px solid #4b5563;
+      border-color: #60a5fa;
+    }
+    input[type="file"]:active {
+      background: rgba(59, 130, 246, 0.1);
+    }
+    .no-select {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .face-marker {
+      position: absolute;
+      border: 2px solid #ef4444;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 5;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
   </style>
 </head>
@@ -355,204 +416,154 @@
 
   <div id="loadingOverlay" class="loading-overlay">
     <div class="spinner"></div>
-    <p id="loadingText">Memproses gambar...</p>
+    <p id="loadingText" class="text-lg font-medium">Memproses gambar...</p>
   </div>
 
-  <header class="sticky top-0 z-50 w-full border-b border-slate-200/50 dark:border-slate-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+  <header class="sticky top-0 z-50 w-full border-b border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
     <div class="container mx-auto flex items-center justify-between px-4 py-3">
       <div class="flex items-center gap-3">
         <svg class="h-8 w-8 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 
-          10 10 10 10-4.48 10-10S17.52 2 
-          12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 
-          8-8 8 3.59 8 8-3.59 8-8 
-          8zM8 11h8v2H8v-2zm-3.5-3.5c-.83 
-          0-1.5-.67-1.5-1.5S3.67 4.5 
-          4.5 4.5s1.5.67 1.5 
-          1.5S5.33 7.5 4.5 7.5zm15 
-          0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 
-          1.5-1.5 1.5.67 1.5 
-          1.5-.67 1.5-1.5 
-          1.5zm-5.83 8.33c-1.39 1.39-3.59 
-          1.39-4.98 0-.2-.2-.2-.51 
-          0-.71s.51-.2.71 
-          0c1.19 1.19 3.16 1.19 4.34 
-          0 .2-.2.51-.2.71 0s.2.51 0 
-          .71z"></path>
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM8 11h8v2H8v-2zm-3.5-3.5c-.83 0-1.5-.67-1.5-1.5S3.67 4.5 4.5 4.5s1.5.67 1.5 1.5S5.33 7.5 4.5 7.5zm15 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-5.83 8.33c-1.39 1.39-3.59 1.39-4.98 0-.2-.2-.2-.51 0-.71s.51-.2.71 0c1.19 1.19 3.16 1.19 4.34 0 .2-.2.51-.2.71 0s.2.51 0 .71z"></path>
         </svg>
         <h2 class="text-xl font-bold text-slate-900 dark:text-white">BlurryFace by UPSKK</h2>
       </div>
 
       <div class="flex items-center gap-2">
-        <button id="themeToggle" class="p-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 transition">
+        <button id="themeToggle" class="p-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 transition active:scale-95">
           <span id="themeIcon" class="material-symbols-outlined text-slate-700 dark:text-slate-200">dark_mode</span>
         </button>
       </div>
     </div>
   </header>
 
-  <main class="flex-grow container mx-auto px-4 py-8 sm:py-16">
-    <div class="mx-auto max-w-3xl text-center">
-      <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
-        Blur Faces in Your Images Instantly
+  <main class="flex-grow container mx-auto px-4 py-6">
+    <div class="mx-auto max-w-3xl text-center mb-6">
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">
+        Blur Wajah Automatik & Manual
       </h1>
-      <p class="mt-4 text-lg text-slate-600 dark:text-slate-400">
-        Protect privacy by automatically blurring faces in your photos. Upload an image and let our AI do the work, or take control with manual blurring tools.
+      <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400">
+        Upload beberapa gambar sekaligus. Blur wajah Automatik, atau blur manual untuk wajah yang tidak dapat dikesan.
       </p>
     </div>
 
-    <div class="mt-10 flex flex-col items-center">
-      <!-- Multiple Image Upload -->
-      <input type="file" id="imageUpload" accept="image/*" multiple
-        class="mb-6 block text-sm text-gray-700 dark:text-gray-300 
-               file:mr-4 file:py-2 file:px-4 
-               file:rounded-lg file:border-0 file:text-sm file:font-semibold
-               file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"/>
+    <div class="flex flex-col items-center">
+      <!-- File Upload -->
+      <input type="file" id="imageUpload" accept="image/*" multiple class="no-select">
       
       <!-- Image Preview Container -->
       <div id="imagePreviewContainer" class="image-preview-container w-full max-w-4xl hidden">
-        <!-- Image previews will be added here -->
+        <!-- Image previews akan ditambahkan di sini -->
       </div>
 
-      <!-- Process Steps Indicator -->
-      <div class="process-steps w-full max-w-4xl mb-6">
+      <!-- Process Steps -->
+      <div class="process-steps w-full max-w-4xl">
         <div class="step-indicator">
           <div id="step1" class="step-circle active">1</div>
-          <div class="step-label">Upload Gambar</div>
+          <div id="step1Label" class="step-label active">Upload</div>
         </div>
         <div class="step-connector"></div>
         <div class="step-indicator">
           <div id="step2" class="step-circle inactive">2</div>
-          <div class="step-label">Blur Wajah</div>
+          <div id="step2Label" class="step-label">Blur</div>
         </div>
         <div class="step-connector"></div>
         <div class="step-indicator">
           <div id="step3" class="step-circle inactive">3</div>
-          <div class="step-label">Watermark</div>
-        </div>
-        <div class="step-connector"></div>
-        <div class="step-indicator">
-          <div id="step4" class="step-circle inactive">4</div>
-          <div class="step-label">Download</div>
+          <div id="step3Label" class="step-label">Download</div>
         </div>
       </div>
 
+      <!-- Canvas Container -->
+      <div class="canvas-container w-full max-w-4xl mb-6">
+        <div id="imageCounter" class="image-counter hidden">1 / 1</div>
+        <div id="touchHint" class="touchHint hidden">Tap pada wajah untuk blur manual</div>
+        <canvas id="canvas" class="w-full h-auto cursor-crosshair"></canvas>
+        <div class="canvas-controls">
+          <button id="prevBtn" class="canvas-control-btn" onclick="prevImage()">
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+          <button id="nextBtn" class="canvas-control-btn" onclick="nextImage()">
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Image Info -->
+      <div id="imageInfo" class="w-full max-w-4xl mb-6 hidden">
+        <div class="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl shadow">
+          <div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">Gambar <span id="currentImageNum">1</span> dari <span id="totalImages">1</span></div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Ukuran: <span id="imageDimensions">-</span></div>
+          </div>
+          <div id="imageOrientation" class="image-orientation">
+            <span class="material-symbols-outlined text-sm" id="orientationIcon">crop_landscape</span>
+            <span id="orientationText">Landscape</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Control Panel -->
       <div class="control-panel w-full max-w-4xl">
-        <div class="mb-4">
-          <!-- Image Info -->
-          <div id="imageInfo" class="mb-4 hidden">
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-medium">Dimensi: <span id="imageDimensions">-</span></span>
-              <span id="imageOrientation" class="image-orientation">
-                <span class="material-symbols-outlined text-sm" id="orientationIcon">crop_landscape</span>
-                <span id="orientationText">Landscape</span>
-              </span>
-            </div>
-          </div>
-
-          <label for="blurType" class="block text-sm font-medium mb-2">Jenis Blur:</label>
-          <div class="flex flex-wrap gap-2 mb-4">
-            <button id="blurGaussian" class="blur-option active px-3 py-2 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 font-medium">Gaussian Blur</button>
-            <button id="blurPixelate" class="blur-option px-3 py-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium">Pixelate</button>
-            <button id="blurBlackBar" class="blur-option px-3 py-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium">Black Bar</button>
+        <!-- Blur Type Selection -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium mb-3">Jenis Blur:</label>
+          <div class="flex gap-2 mb-4">
+            <button id="blurGaussian" class="blur-option active px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 font-medium">Gaussian</button>
+            <button id="blurPixelate" class="blur-option px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium">Pixelate</button>
+            <button id="blurBlackBar" class="blur-option px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium">Black Bar</button>
           </div>
           
-          <label for="blurIntensity" class="block text-sm font-medium mb-2">Intensiti Blur (Kadar Kekaburan): <span id="blurValue">20</span>px</label>
-          <input type="range" id="blurIntensity" min="5" max="50" value="20" class="range-slider">
-
-          <label for="manualBlurSize" class="block text-sm font-medium mt-4 mb-2">Saiz Blur Manual (Kawasan): <span id="manualBlurValue">100</span>px</label>
-          <input type="range" id="manualBlurSize" min="0" max="200" value="100" class="range-slider">
+          <!-- Blur Intensity -->
+          <div class="mb-5">
+            <label for="blurIntensity" class="block text-sm font-medium mb-2">
+              Intensiti Blur: <span id="blurValue" class="font-bold text-blue-600 dark:text-blue-400">20</span>px
+            </label>
+            <input type="range" id="blurIntensity" min="5" max="50" value="20" class="range-slider">
+          </div>
           
-          <!-- Watermark Options -->
-          <div class="watermark-options">
-            <label class="block text-sm font-medium mb-2">Watermark Template:</label>
-            
-            <!-- Watermark Type Selection -->
-            <div class="mb-4">
-              <div class="watermark-preview-container">
-                <div>
-                  <img src="https://ik.imagekit.io/pyreotmgq/landscape%20watermark%20(1).png" 
-                       class="watermark-template-preview active" 
-                       id="landscapeWatermarkPreview"
-                       alt="Landscape Watermark">
-                  <div class="text-xs text-center mt-1">Landscape</div>
-                </div>
-                <div>
-                  <img src="https://ik.imagekit.io/pyreotmgq/potrait%20watermark.png" 
-                       class="watermark-template-preview" 
-                       id="portraitWatermarkPreview"
-                       alt="Portrait Watermark">
-                  <div class="text-xs text-center mt-1">Portrait</div>
-                </div>
-              </div>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mb-4">
-                Template akan otomatis dipilih berdasarkan orientasi gambar
-              </p>
-            </div>
-            
-            <!-- Preset Positions -->
-            <div class="mb-4">
-              <label class="block text-sm font-medium mb-2">Posisi Preset:</label>
-              <div class="flex flex-wrap gap-2">
-                <button class="watermark-preset-btn" onclick="applyPresetPosition('full')">Penuh</button>
-                <button class="watermark-preset-btn" onclick="applyPresetPosition('center')">Tengah</button>
-                <button class="watermark-preset-btn" onclick="applyPresetPosition('bottom-right')">Kanan Bawah</button>
-                <button class="watermark-preset-btn" onclick="applyPresetPosition('top-left')">Kiri Atas</button>
-              </div>
-            </div>
-            
-            <!-- Add Watermark Button -->
-            <button onclick="addWatermark()" class="px-3 py-2 mb-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium">
-              <span class="material-symbols-outlined align-middle" style="font-size: 16px">add</span>
-              Tambah Watermark
-            </button>
-            
-            <!-- Watermark Container -->
-            <div id="watermarkContainer" class="watermark-container min-h-[200px] relative">
-              <!-- Watermark akan ditampilkan di sini -->
-              <div class="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600">
-                <div class="text-center">
-                  <span class="material-symbols-outlined text-4xl mb-2">photo_filter</span>
-                  <p class="text-sm">Klik "Tambah Watermark" untuk menambahkan<br>template ke gambar</p>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Watermark Controls -->
-            <div class="mt-4 grid grid-cols-2 gap-4">
-              <div>
-                <label for="watermarkOpacity" class="block text-sm font-medium mb-2">Kejelasan: <span id="opacityValue">70</span>%</label>
-                <input type="range" id="watermarkOpacity" min="10" max="100" value="70" class="range-slider">
-              </div>
-              <div>
-                <label for="watermarkScale" class="block text-sm font-medium mb-2">Skala: <span id="scaleValue">100</span>%</label>
-                <input type="range" id="watermarkScale" min="10" max="200" value="100" class="range-slider">
-              </div>
-            </div>
-            
-            <!-- Scale Info -->
-            <div id="scaleInfo" class="mt-2 text-xs text-gray-600 dark:text-gray-400 hidden">
-              Skala relatif: <span id="relativeScale">0%</span> dari gambar
+          <!-- Manual Blur Size -->
+          <div class="mb-6">
+            <label for="manualBlurSize" class="block text-sm font-medium mb-2">
+              Ukuran Blur Manual: <span id="manualBlurValue" class="font-bold text-blue-600 dark:text-blue-400">100</span>px
+            </label>
+            <input type="range" id="manualBlurSize" min="50" max="200" value="100" class="range-slider">
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Ukuran area blur saat tap manual pada wajah
             </div>
           </div>
         </div>
-        
-        <div class="flex flex-wrap justify-center gap-3">
-          <button onclick="autoBlur()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium shadow">Blur Automatik</button>
-          <button onclick="processAllImages()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow">Blur Semua Gambar</button>
-          <button onclick="resetImage()" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium shadow">Reset</button>
-          <button onclick="undo()" class="px-4 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-medium shadow">Undo</button>
-          <button onclick="redo()" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium shadow">Redo</button>
-          <button onclick="applyWatermarkToCanvas()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium shadow">Apply Watermark</button>
-          <button onclick="downloadImage()" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium shadow">Download</button>
-          <button onclick="downloadAllImages()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow">Download Semua</button>
-        </div>
-      </div>
 
-      <div class="w-full max-w-4xl">
-        <canvas id="canvas" class="border border-gray-600 rounded-xl shadow-lg w-full cursor-crosshair"></canvas>
-        <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          <span id="canvasStatus">Status: Gambar belum diproses</span>
+        <!-- Action Buttons Grid -->
+        <div class="controls-grid">
+          <button onclick="autoBlur()" class="action-btn btn-primary">
+            <span class="material-symbols-outlined btn-icon">auto_fix_high</span>
+            <span>Automatik Blur</span>
+          </button>
+          
+          <button onclick="processAllImages()" class="action-btn btn-success">
+            <span class="material-symbols-outlined btn-icon">playlist_add_check</span>
+            <span>Blur Semua</span>
+          </button>
+          
+          <button onclick="resetImage()" class="action-btn btn-secondary">
+            <span class="material-symbols-outlined btn-icon">restart_alt</span>
+            <span>Reset</span>
+          </button>
+          
+          <button onclick="undo()" class="action-btn btn-warning">
+            <span class="material-symbols-outlined btn-icon">undo</span>
+            <span>Undo</span>
+          </button>
+          
+          <button onclick="downloadImage()" class="action-btn btn-primary">
+            <span class="material-symbols-outlined btn-icon">download</span>
+            <span>Download</span>
+          </button>
+          
+          <button onclick="downloadAllImages()" class="action-btn btn-success">
+            <span class="material-symbols-outlined btn-icon">download_for_offline</span>
+            <span>Download Semua</span>
+          </button>
         </div>
       </div>
     </div>
@@ -577,840 +588,51 @@
       updateThemeIcon();
     });
 
+    themeToggle.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      html.classList.toggle("dark");
+      updateThemeIcon();
+    });
+
     updateThemeIcon();
 
     // === Global Variables ===
-    let currentImage;
+    let currentImage = null;
+    let images = [];
+    let currentImageIndex = 0;
     let history = [];
     let historyIndex = -1;
     let blurIntensity = 20;
     let manualBlurSize = 100;
     let blurType = 'gaussian';
-    let images = [];
-    let currentImageIndex = 0;
-    
-    // Watermark variables
-    let watermarks = [];
-    let watermarkOpacity = 70;
-    let watermarkScale = 100;
-    let activeWatermarkElement = null;
-    let currentWatermarkType = 'auto'; // 'auto', 'landscape', 'portrait'
-    
-    // Process state
     let isBlurApplied = false;
-    let isWatermarkApplied = false;
-    
-    // Watermark URLs
-    const watermarkUrls = {
-      'landscape': 'https://ik.imagekit.io/pyreotmgq/landscape%20watermark%20(1).png',
-      'portrait': 'https://ik.imagekit.io/pyreotmgq/potrait%20watermark.png'
-    };
+    let detectedFaces = [];
+    let isProcessing = false;
 
-    // === Update Process Steps ===
-    function updateProcessSteps() {
-      const step1 = document.getElementById('step1');
-      const step2 = document.getElementById('step2');
-      const step3 = document.getElementById('step3');
-      const step4 = document.getElementById('step4');
-      const connectors = document.querySelectorAll('.step-connector');
-      const canvasStatus = document.getElementById('canvasStatus');
-      
-      // Reset all steps
-      step1.className = 'step-circle inactive';
-      step2.className = 'step-circle inactive';
-      step3.className = 'step-circle inactive';
-      step4.className = 'step-circle inactive';
-      
-      connectors.forEach(connector => {
-        connector.classList.remove('active');
-      });
-      
-      // Step 1: Upload gambar (selalu aktif jika ada gambar)
-      if (currentImage) {
-        step1.className = 'step-circle completed';
-      }
-      
-      // Step 2: Blur wajah
-      if (isBlurApplied) {
-        step2.className = 'step-circle completed';
-        connectors[0].classList.add('active');
-        step3.className = 'step-circle active';
-        connectors[1].classList.add('active');
-      } else if (currentImage) {
-        step2.className = 'step-circle active';
-        connectors[0].classList.add('active');
-      }
-      
-      // Step 3: Watermark
-      if (isWatermarkApplied) {
-        step3.className = 'step-circle completed';
-        connectors[2].classList.add('active');
-        step4.className = 'step-circle active';
-      } else if (isBlurApplied && watermarks.length > 0) {
-        step3.className = 'step-circle active';
-        connectors[1].classList.add('active');
-      }
-      
-      // Step 4: Download (hanya aktif setelah watermark)
-      if (isWatermarkApplied) {
-        step4.className = 'step-circle active';
-        connectors[2].classList.add('active');
-      }
-      
-      // Update canvas status
-      if (!currentImage) {
-        canvasStatus.textContent = 'Status: Gambar belum diproses';
-      } else if (!isBlurApplied) {
-        canvasStatus.textContent = 'Status: Siap untuk blur wajah';
-      } else if (!isWatermarkApplied) {
-        canvasStatus.textContent = 'Status: Blur selesai, siap untuk watermark';
-      } else {
-        canvasStatus.textContent = 'Status: Siap untuk download';
-      }
+    // === Loading Indicator Functions ===
+    function showLoading(text = "Memproses gambar...") {
+      const overlay = document.getElementById("loadingOverlay");
+      const loadingText = document.getElementById("loadingText");
+      loadingText.textContent = text;
+      overlay.style.display = "flex";
     }
 
-    // === Get Image Orientation ===
-    function getImageOrientation(width, height) {
-      return width >= height ? 'landscape' : 'portrait';
+    function hideLoading() {
+      const overlay = document.getElementById("loadingOverlay");
+      overlay.style.display = "none";
     }
 
-    // === Get Watermark URL based on orientation ===
-    function getWatermarkUrl() {
-      if (currentWatermarkType === 'auto' && currentImage) {
-        const orientation = getImageOrientation(currentImage.width, currentImage.height);
-        return watermarkUrls[orientation];
-      }
-      return watermarkUrls[currentWatermarkType] || watermarkUrls.landscape;
-    }
-
-    // === Initialize Watermark Controls ===
-    function initializeWatermarkControls() {
-      // Watermark preview click handlers
-      const landscapePreview = document.getElementById('landscapeWatermarkPreview');
-      const portraitPreview = document.getElementById('portraitWatermarkPreview');
-      
-      if (landscapePreview && portraitPreview) {
-        landscapePreview.addEventListener('click', function() {
-          currentWatermarkType = 'landscape';
-          landscapePreview.classList.add('active');
-          portraitPreview.classList.remove('active');
-        });
-        
-        portraitPreview.addEventListener('click', function() {
-          currentWatermarkType = 'portrait';
-          portraitPreview.classList.add('active');
-          landscapePreview.classList.remove('active');
-        });
-      }
-      
-      // Opacity control
-      const opacitySlider = document.getElementById('watermarkOpacity');
-      const opacityValue = document.getElementById('opacityValue');
-      
-      if (opacitySlider && opacityValue) {
-        opacitySlider.addEventListener('input', function() {
-          watermarkOpacity = parseInt(this.value);
-          opacityValue.textContent = watermarkOpacity + '%';
-          
-          // Update opacity of active watermark
-          if (activeWatermarkElement) {
-            activeWatermarkElement.style.opacity = watermarkOpacity / 100;
-            updateWatermarkOpacity(activeWatermarkElement.id, watermarkOpacity);
-          }
-        });
-      }
-      
-      // Scale control
-      const scaleSlider = document.getElementById('watermarkScale');
-      const scaleValue = document.getElementById('scaleValue');
-      
-      if (scaleSlider && scaleValue) {
-        scaleSlider.addEventListener('input', function() {
-          watermarkScale = parseInt(this.value);
-          scaleValue.textContent = watermarkScale + '%';
-          
-          // Update scale of active watermark
-          if (activeWatermarkElement) {
-            const watermarkId = activeWatermarkElement.id;
-            const watermark = watermarks.find(w => w.id === watermarkId);
-            if (watermark) {
-              const container = document.getElementById('watermarkContainer');
-              const containerWidth = container.clientWidth;
-              
-              // Calculate new dimensions based on scale
-              const newWidth = (containerWidth * watermarkScale) / 100;
-              
-              // Load temporary image to get aspect ratio
-              const tempImg = new Image();
-              tempImg.src = getWatermarkUrl();
-              tempImg.onload = function() {
-                const aspectRatio = tempImg.height / tempImg.width;
-                const newHeight = newWidth * aspectRatio;
-                
-                // Update element size
-                activeWatermarkElement.style.width = newWidth + 'px';
-                activeWatermarkElement.style.height = newHeight + 'px';
-                
-                // Keep center position
-                const rect = activeWatermarkElement.getBoundingClientRect();
-                const containerRect = container.getBoundingClientRect();
-                const currentCenterX = rect.left + rect.width/2;
-                const currentCenterY = rect.top + rect.height/2;
-                
-                const newX = (currentCenterX - containerRect.left) - newWidth/2;
-                const newY = (currentCenterY - containerRect.top) - newHeight/2;
-                
-                // Keep within bounds
-                const boundedX = Math.max(0, Math.min(newX, containerRect.width - newWidth));
-                const boundedY = Math.max(0, Math.min(newY, containerRect.height - newHeight));
-                
-                activeWatermarkElement.style.left = boundedX + 'px';
-                activeWatermarkElement.style.top = boundedY + 'px';
-                
-                // Update watermark data
-                updateWatermarkSize(watermarkId, newWidth, newHeight);
-                updateWatermarkPosition(watermarkId, boundedX, boundedY);
-                
-                // Update scale info
-                updateScaleInfo();
-              };
-            }
-          }
-        });
-      }
-      
-      // Initialize watermark container
-      const watermarkContainer = document.getElementById('watermarkContainer');
-      watermarkContainer.addEventListener('click', function(e) {
-        if (e.target === this) {
-          // Clicked on container background, deselect active watermark
-          if (activeWatermarkElement) {
-            activeWatermarkElement.classList.remove('active');
-            activeWatermarkElement = null;
-          }
-        }
-      });
-    }
-
-    // === Calculate relative scale ===
-    function updateScaleInfo() {
-      if (!currentImage || watermarks.length === 0) return;
-      
-      const watermark = watermarks[0];
-      const scaleInfo = document.getElementById('scaleInfo');
-      const relativeScaleSpan = document.getElementById('relativeScale');
-      
-      if (watermark && scaleInfo && relativeScaleSpan) {
-        const imageWidth = currentImage.width;
-        const containerWidth = document.getElementById('watermarkContainer').clientWidth;
-        
-        const scaleToImage = imageWidth / containerWidth;
-        const watermarkOnImageWidth = watermark.width * scaleToImage;
-        const relativeScalePercent = Math.round((watermarkOnImageWidth / imageWidth) * 100);
-        
-        relativeScaleSpan.textContent = relativeScalePercent + '%';
-        scaleInfo.classList.remove('hidden');
-      }
-    }
-
-    // === Add Watermark Function ===
-    function addWatermark() {
-      if (!currentImage) {
-        alert('Muat naik gambar dulu sebelum menambah watermark.');
-        return;
-      }
-      
-      const watermarkContainer = document.getElementById('watermarkContainer');
-      
-      // Clear existing watermarks (we'll only have one at a time)
-      clearWatermarks();
-      
-      // Get watermark URL
-      const watermarkUrl = getWatermarkUrl();
-      
-      // Create watermark element
-      const watermarkId = 'watermark_' + Date.now();
-      const watermarkDiv = document.createElement('div');
-      watermarkDiv.className = 'watermark-item active';
-      watermarkDiv.id = watermarkId;
-      
-      // Load watermark image to get dimensions
-      const tempImg = new Image();
-      tempImg.crossOrigin = "anonymous";
-      tempImg.src = watermarkUrl;
-      
-      tempImg.onload = function() {
-        // Calculate initial size based on container
-        const containerWidth = watermarkContainer.clientWidth;
-        const initialWidth = (containerWidth * watermarkScale) / 100;
-        const aspectRatio = tempImg.height / tempImg.width;
-        const initialHeight = initialWidth * aspectRatio;
-        
-        // Center position
-        const centerX = (containerWidth - initialWidth) / 2;
-        const centerY = (watermarkContainer.clientHeight - initialHeight) / 2;
-        
-        watermarkDiv.style.width = initialWidth + 'px';
-        watermarkDiv.style.height = initialHeight + 'px';
-        watermarkDiv.style.left = centerX + 'px';
-        watermarkDiv.style.top = centerY + 'px';
-        watermarkDiv.style.opacity = watermarkOpacity / 100;
-        
-        // Create image element
-        const img = document.createElement('img');
-        img.src = watermarkUrl;
-        img.alt = 'Watermark Template';
-        img.draggable = false;
-        
-        // Create controls
-        const controlsDiv = document.createElement('div');
-        controlsDiv.className = 'watermark-controls';
-        
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'watermark-control-btn';
-        deleteBtn.innerHTML = '×';
-        deleteBtn.title = 'Hapus watermark';
-        deleteBtn.onclick = function(e) {
-          e.stopPropagation();
-          removeWatermark(watermarkId);
-        };
-        
-        controlsDiv.appendChild(deleteBtn);
-        watermarkDiv.appendChild(controlsDiv);
-        watermarkDiv.appendChild(img);
-        
-        // Add resize handle
-        const resizeHandle = document.createElement('div');
-        resizeHandle.className = 'resize-handle';
-        watermarkDiv.appendChild(resizeHandle);
-        
-        // Add scale info
-        const scaleInfoDiv = document.createElement('div');
-        scaleInfoDiv.className = 'watermark-scale-info';
-        scaleInfoDiv.id = watermarkId + '_scale';
-        watermarkDiv.appendChild(scaleInfoDiv);
-        
-        // Add to container
-        watermarkContainer.querySelector('.absolute').remove(); // Remove placeholder
-        watermarkContainer.appendChild(watermarkDiv);
-        
-        // Make draggable and resizable
-        makeDraggable(watermarkDiv);
-        makeResizable(watermarkDiv, tempImg);
-        
-        // Select this watermark
-        selectWatermark(watermarkDiv);
-        
-        // Add to watermarks array
-        watermarks.push({
-          id: watermarkId,
-          type: currentWatermarkType === 'auto' ? getImageOrientation(currentImage.width, currentImage.height) : currentWatermarkType,
-          x: centerX,
-          y: centerY,
-          width: initialWidth,
-          height: initialHeight,
-          opacity: watermarkOpacity,
-          scale: watermarkScale,
-          url: watermarkUrl
-        });
-        
-        // Update scale info
-        updateScaleInfo();
-        
-        // Update process steps
-        updateProcessSteps();
-      };
-      
-      tempImg.onerror = function() {
-        alert('Gagal memuat template watermark. Coba lagi.');
-      };
-    }
-
-    function removeWatermark(id) {
-      const element = document.getElementById(id);
-      if (element) {
-        element.remove();
-        watermarks = watermarks.filter(w => w.id !== id);
-        
-        if (activeWatermarkElement === element) {
-          activeWatermarkElement = null;
-        }
-        
-        // Show placeholder if no watermarks
-        if (watermarks.length === 0) {
-          const container = document.getElementById('watermarkContainer');
-          const placeholder = document.createElement('div');
-          placeholder.className = 'absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600';
-          placeholder.innerHTML = `
-            <div class="text-center">
-              <span class="material-symbols-outlined text-4xl mb-2">photo_filter</span>
-              <p class="text-sm">Klik "Tambah Watermark" untuk menambahkan<br>template ke gambar</p>
-            </div>
-          `;
-          container.appendChild(placeholder);
-        }
-      }
-    }
-
-    function selectWatermark(element) {
-      if (activeWatermarkElement) {
-        activeWatermarkElement.classList.remove('active');
-      }
-      activeWatermarkElement = element;
-      element.classList.add('active');
-      
-      // Update controls to match selected watermark
-      const watermark = watermarks.find(w => w.id === element.id);
-      if (watermark) {
-        // Update opacity slider
-        const opacitySlider = document.getElementById('watermarkOpacity');
-        const opacityValue = document.getElementById('opacityValue');
-        if (opacitySlider && opacityValue) {
-          opacitySlider.value = watermark.opacity;
-          opacityValue.textContent = watermark.opacity + '%';
-          watermarkOpacity = watermark.opacity;
-        }
-        
-        // Update scale slider
-        const scaleSlider = document.getElementById('watermarkScale');
-        const scaleValue = document.getElementById('scaleValue');
-        if (scaleSlider && scaleValue) {
-          const containerWidth = document.getElementById('watermarkContainer').clientWidth;
-          const currentScale = Math.round((watermark.width / containerWidth) * 100);
-          scaleSlider.value = currentScale;
-          scaleValue.textContent = currentScale + '%';
-          watermarkScale = currentScale;
-        }
-        
-        updateScaleInfo();
-      }
-    }
-
-    function makeDraggable(element) {
-      let isDragging = false;
-      let offsetX, offsetY;
-      
-      element.addEventListener('mousedown', startDrag);
-      element.addEventListener('touchstart', startDragTouch);
-      
-      function startDrag(e) {
-        e.preventDefault();
-        isDragging = true;
-        selectWatermark(element);
-        
-        const rect = element.getBoundingClientRect();
-        offsetX = e.clientX - rect.left;
-        offsetY = e.clientY - rect.top;
-        
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', stopDrag);
-      }
-      
-      function startDragTouch(e) {
-        if (e.touches.length !== 1) return;
-        
-        e.preventDefault();
-        isDragging = true;
-        selectWatermark(element);
-        
-        const touch = e.touches[0];
-        const rect = element.getBoundingClientRect();
-        offsetX = touch.clientX - rect.left;
-        offsetY = touch.clientY - rect.top;
-        
-        document.addEventListener('touchmove', dragTouch);
-        document.addEventListener('touchend', stopDrag);
-      }
-      
-      function drag(e) {
-        if (!isDragging) return;
-        
-        const container = document.getElementById('watermarkContainer');
-        const containerRect = container.getBoundingClientRect();
-        
-        let x = e.clientX - containerRect.left - offsetX;
-        let y = e.clientY - containerRect.top - offsetY;
-        
-        // Keep within container bounds
-        x = Math.max(0, Math.min(x, containerRect.width - element.offsetWidth));
-        y = Math.max(0, Math.min(y, containerRect.height - element.offsetHeight));
-        
-        element.style.left = x + 'px';
-        element.style.top = y + 'px';
-        
-        // Update watermark data
-        updateWatermarkPosition(element.id, x, y);
-        updateScaleInfo();
-      }
-      
-      function dragTouch(e) {
-        if (!isDragging || e.touches.length !== 1) return;
-        
-        const touch = e.touches[0];
-        const container = document.getElementById('watermarkContainer');
-        const containerRect = container.getBoundingClientRect();
-        
-        let x = touch.clientX - containerRect.left - offsetX;
-        let y = touch.clientY - containerRect.top - offsetY;
-        
-        x = Math.max(0, Math.min(x, containerRect.width - element.offsetWidth));
-        y = Math.max(0, Math.min(y, containerRect.height - element.offsetHeight));
-        
-        element.style.left = x + 'px';
-        element.style.top = y + 'px';
-        
-        updateWatermarkPosition(element.id, x, y);
-        updateScaleInfo();
-      }
-      
-      function stopDrag() {
-        isDragging = false;
-        document.removeEventListener('mousemove', drag);
-        document.removeEventListener('touchmove', dragTouch);
-        document.removeEventListener('mouseup', stopDrag);
-        document.removeEventListener('touchend', stopDrag);
-      }
-    }
-
-    function makeResizable(element, watermarkImage) {
-      const resizeHandle = element.querySelector('.resize-handle');
-      let isResizing = false;
-      let startWidth, startHeight, startX, startY;
-      
-      resizeHandle.addEventListener('mousedown', startResize);
-      resizeHandle.addEventListener('touchstart', startResizeTouch);
-      
-      function startResize(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        isResizing = true;
-        selectWatermark(element);
-        
-        startWidth = element.offsetWidth;
-        startHeight = element.offsetHeight;
-        startX = e.clientX;
-        startY = e.clientY;
-        
-        document.addEventListener('mousemove', resize);
-        document.addEventListener('mouseup', stopResize);
-      }
-      
-      function startResizeTouch(e) {
-        if (e.touches.length !== 1) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        isResizing = true;
-        selectWatermark(element);
-        
-        const touch = e.touches[0];
-        startWidth = element.offsetWidth;
-        startHeight = element.offsetHeight;
-        startX = touch.clientX;
-        startY = touch.clientY;
-        
-        document.addEventListener('touchmove', resizeTouch);
-        document.addEventListener('touchend', stopResize);
-      }
-      
-      function resize(e) {
-        if (!isResizing) return;
-        
-        const minSize = 30;
-        const newWidth = Math.max(minSize, startWidth + (e.clientX - startX));
-        
-        // Maintain aspect ratio
-        const aspectRatio = watermarkImage.height / watermarkImage.width;
-        const newHeight = newWidth * aspectRatio;
-        
-        element.style.width = newWidth + 'px';
-        element.style.height = newHeight + 'px';
-        
-        updateWatermarkSize(element.id, newWidth, newHeight);
-        updateScaleInfo();
-        
-        // Update scale slider
-        const container = document.getElementById('watermarkContainer');
-        const containerWidth = container.clientWidth;
-        const currentScale = Math.round((newWidth / containerWidth) * 100);
-        
-        const scaleSlider = document.getElementById('watermarkScale');
-        const scaleValue = document.getElementById('scaleValue');
-        if (scaleSlider && scaleValue) {
-          scaleSlider.value = currentScale;
-          scaleValue.textContent = currentScale + '%';
-          watermarkScale = currentScale;
-        }
-      }
-      
-      function resizeTouch(e) {
-        if (!isResizing || e.touches.length !== 1) return;
-        
-        const touch = e.touches[0];
-        const minSize = 30;
-        const newWidth = Math.max(minSize, startWidth + (touch.clientX - startX));
-        
-        const aspectRatio = watermarkImage.height / watermarkImage.width;
-        const newHeight = newWidth * aspectRatio;
-        
-        element.style.width = newWidth + 'px';
-        element.style.height = newHeight + 'px';
-        
-        updateWatermarkSize(element.id, newWidth, newHeight);
-        updateScaleInfo();
-        
-        const container = document.getElementById('watermarkContainer');
-        const containerWidth = container.clientWidth;
-        const currentScale = Math.round((newWidth / containerWidth) * 100);
-        
-        const scaleSlider = document.getElementById('watermarkScale');
-        const scaleValue = document.getElementById('scaleValue');
-        if (scaleSlider && scaleValue) {
-          scaleSlider.value = currentScale;
-          scaleValue.textContent = currentScale + '%';
-          watermarkScale = currentScale;
-        }
-      }
-      
-      function stopResize() {
-        isResizing = false;
-        document.removeEventListener('mousemove', resize);
-        document.removeEventListener('touchmove', resizeTouch);
-        document.removeEventListener('mouseup', stopResize);
-        document.removeEventListener('touchend', stopResize);
-      }
-    }
-
-    function updateWatermarkPosition(id, x, y) {
-      const watermark = watermarks.find(w => w.id === id);
-      if (watermark) {
-        watermark.x = x;
-        watermark.y = y;
-      }
-    }
-
-    function updateWatermarkSize(id, width, height) {
-      const watermark = watermarks.find(w => w.id === id);
-      if (watermark) {
-        watermark.width = width;
-        watermark.height = height;
-        
-        // Update scale
-        const container = document.getElementById('watermarkContainer');
-        const containerWidth = container.clientWidth;
-        watermark.scale = Math.round((width / containerWidth) * 100);
-      }
-    }
-
-    function updateWatermarkOpacity(id, opacity) {
-      const watermark = watermarks.find(w => w.id === id);
-      if (watermark) {
-        watermark.opacity = opacity;
-      }
-    }
-
-    // === Apply Preset Positions ===
-    function applyPresetPosition(preset) {
-      if (watermarks.length === 0) {
-        alert('Tambah watermark dulu.');
-        return;
-      }
-      
-      const watermark = watermarks[0];
-      const element = document.getElementById(watermark.id);
-      if (!element) return;
-      
-      const container = document.getElementById('watermarkContainer');
-      const containerRect = container.getBoundingClientRect();
-      
-      let x, y, width, height;
-      
-      switch(preset) {
-        case 'full':
-          // Full container with padding
-          const padding = 10;
-          x = padding;
-          y = padding;
-          width = containerRect.width - (padding * 2);
-          height = containerRect.height - (padding * 2);
-          break;
-          
-        case 'center':
-          // Center (50% of container)
-          width = containerRect.width * 0.5;
-          // Load image to get aspect ratio
-          const tempImg = new Image();
-          tempImg.src = getWatermarkUrl();
-          tempImg.onload = function() {
-            const aspectRatio = tempImg.height / tempImg.width;
-            height = width * aspectRatio;
-            x = (containerRect.width - width) / 2;
-            y = (containerRect.height - height) / 2;
-            
-            applyPositionAndSize(element, watermark, x, y, width, height);
-          };
-          return;
-          
-        case 'bottom-right':
-          // Bottom right with padding
-          const paddingBR = 20;
-          width = containerRect.width * 0.3;
-          const tempImgBR = new Image();
-          tempImgBR.src = getWatermarkUrl();
-          tempImgBR.onload = function() {
-            const aspectRatio = tempImgBR.height / tempImgBR.width;
-            height = width * aspectRatio;
-            x = containerRect.width - width - paddingBR;
-            y = containerRect.height - height - paddingBR;
-            
-            applyPositionAndSize(element, watermark, x, y, width, height);
-          };
-          return;
-          
-        case 'top-left':
-          // Top left with padding
-          const paddingTL = 20;
-          width = containerRect.width * 0.3;
-          const tempImgTL = new Image();
-          tempImgTL.src = getWatermarkUrl();
-          tempImgTL.onload = function() {
-            const aspectRatio = tempImgTL.height / tempImgTL.width;
-            height = width * aspectRatio;
-            x = paddingTL;
-            y = paddingTL;
-            
-            applyPositionAndSize(element, watermark, x, y, width, height);
-          };
-          return;
-      }
-      
-      applyPositionAndSize(element, watermark, x, y, width, height);
-    }
-
-    function applyPositionAndSize(element, watermark, x, y, width, height) {
-      // Apply new position and size
-      element.style.width = width + 'px';
-      element.style.height = height + 'px';
-      element.style.left = x + 'px';
-      element.style.top = y + 'px';
-      
-      // Update watermark data
-      updateWatermarkPosition(watermark.id, x, y);
-      updateWatermarkSize(watermark.id, width, height);
-      
-      // Update scale slider
-      const container = document.getElementById('watermarkContainer');
-      const containerWidth = container.clientWidth;
-      const currentScale = Math.round((width / containerWidth) * 100);
-      
-      const scaleSlider = document.getElementById('watermarkScale');
-      const scaleValue = document.getElementById('scaleValue');
-      if (scaleSlider && scaleValue) {
-        scaleSlider.value = currentScale;
-        scaleValue.textContent = currentScale + '%';
-        watermarkScale = currentScale;
-      }
-      
-      updateScaleInfo();
-    }
-
-    // === Apply Watermark to Canvas (FIXED - tidak reset blur) ===
-    function applyWatermarkToCanvas() {
-      if (!currentImage) {
-        alert('Muat naik gambar dulu.');
-        return;
-      }
-      
-      if (watermarks.length === 0) {
-        alert('Tambah watermark dulu dengan menekan "Tambah Watermark".');
-        return;
-      }
-      
-      if (!isBlurApplied) {
-        const confirmApply = confirm('Blur belum diterapkan. Watermark akan ditambahkan ke gambar asli. Teruskan?');
-        if (!confirmApply) return;
-      }
-      
-      showLoading('Menambahkan watermark ke gambar...');
-      
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      // **FIX: Jangan gambar ulang image asli, gunakan canvas saat ini**
-      // Canvas sudah berisi gambar dengan blur, jadi kita langsung tambah watermark di atasnya
-      
-      // Get watermark container dimensions for scaling
-      const container = document.getElementById('watermarkContainer');
-      const containerRect = container.getBoundingClientRect();
-      
-      // Scale factor to convert from container to canvas
-      const scaleX = canvas.width / containerRect.width;
-      const scaleY = canvas.height / containerRect.height;
-      
-      // Apply each watermark
-      let watermarksApplied = 0;
-      const totalWatermarks = watermarks.length;
-      
-      watermarks.forEach(watermark => {
-        const watermarkImg = new Image();
-        watermarkImg.crossOrigin = "anonymous";
-        watermarkImg.src = watermark.url || getWatermarkUrl();
-        
-        watermarkImg.onload = function() {
-          // Calculate scaled position and size
-          const x = watermark.x * scaleX;
-          const y = watermark.y * scaleY;
-          const width = watermark.width * scaleX;
-          const height = watermark.height * scaleY;
-          
-          // Apply opacity
-          ctx.save();
-          ctx.globalAlpha = watermark.opacity / 100;
-          
-          // Draw watermark ON TOP of existing canvas content
-          ctx.drawImage(watermarkImg, x, y, width, height);
-          
-          ctx.restore();
-          
-          watermarksApplied++;
-          
-          // Check if all watermarks have been applied
-          if (watermarksApplied === totalWatermarks) {
-            saveState();
-            isWatermarkApplied = true;
-            hideLoading();
-            updateProcessSteps();
-            alert('Watermark berhasil ditambahkan ke gambar!');
-          }
-        };
-        
-        watermarkImg.onerror = function() {
-          console.error('Gagal memuat gambar watermark');
-          watermarksApplied++;
-          
-          if (watermarksApplied === totalWatermarks) {
-            hideLoading();
-            alert('Gagal memuat beberapa watermark. Coba lagi.');
-          }
-        };
-      });
-    }
-
-    // === Blur Type Selection ===
+    // === Initialize Blur Type Selection ===
     function initializeBlurTypeSelection() {
       const blurGaussian = document.getElementById('blurGaussian');
       const blurPixelate = document.getElementById('blurPixelate');
       const blurBlackBar = document.getElementById('blurBlackBar');
       
-      if (blurGaussian && blurPixelate && blurBlackBar) {
-        blurGaussian.addEventListener('click', () => setBlurType('gaussian'));
-        blurPixelate.addEventListener('click', () => setBlurType('pixelate'));
-        blurBlackBar.addEventListener('click', () => setBlurType('blackBar'));
-        
-        setBlurType('gaussian');
-      } else {
-        console.error('Salah satu tombol blur tidak ditemukan');
-      }
+      blurGaussian.addEventListener('click', () => setBlurType('gaussian'));
+      blurPixelate.addEventListener('click', () => setBlurType('pixelate'));
+      blurBlackBar.addEventListener('click', () => setBlurType('blackBar'));
+      
+      setBlurType('gaussian');
     }
 
     function setBlurType(type) {
@@ -1421,10 +643,8 @@
       const blurBlackBar = document.getElementById('blurBlackBar');
       
       [blurGaussian, blurPixelate, blurBlackBar].forEach(button => {
-        if (button) {
-          button.classList.remove('active', 'bg-blue-100', 'dark:bg-blue-900', 'text-blue-800', 'dark:text-blue-200');
-          button.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
-        }
+        button.classList.remove('active', 'bg-blue-100', 'dark:bg-blue-900', 'text-blue-800', 'dark:text-blue-200');
+        button.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
       });
       
       let activeButton;
@@ -1446,57 +666,47 @@
       }
     }
 
-    // === Loading Indicator Functions ===
-    function showLoading(text = "Memproses gambar...") {
-      const overlay = document.getElementById("loadingOverlay");
-      const loadingText = document.getElementById("loadingText");
-      loadingText.textContent = text;
-      overlay.style.display = "flex";
-    }
-
-    function hideLoading() {
-      const overlay = document.getElementById("loadingOverlay");
-      overlay.style.display = "none";
-    }
-
-    // === Blur Intensity Control ===
-    const blurSlider = document.getElementById("blurIntensity");
-    const blurValue = document.getElementById("blurValue");
-    const manualBlurSlider = document.getElementById("manualBlurSize");
-    const manualBlurValue = document.getElementById("manualBlurValue");
-
-    if (blurSlider && blurValue) {
-      blurSlider.addEventListener("input", function() {
-        blurIntensity = parseInt(this.value);
-        blurValue.textContent = blurIntensity;
-      });
-    }
-
-    if (manualBlurSlider && manualBlurValue) {
-      manualBlurSlider.addEventListener("input", function() {
-        manualBlurSize = parseInt(this.value);
-        manualBlurValue.textContent = manualBlurSize;
-      });
-    }
-
-    // === Model Loading ===
-    async function loadFaceModels() {
-      try {
-        showLoading("Memuat model AI...");
+    // === Update Process Steps ===
+    function updateProcessSteps() {
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const step3 = document.getElementById('step3');
+      const step1Label = document.getElementById('step1Label');
+      const step2Label = document.getElementById('step2Label');
+      const step3Label = document.getElementById('step3Label');
+      const connectors = document.querySelectorAll('.step-connector');
+      
+      // Reset all
+      step1.className = 'step-circle inactive';
+      step2.className = 'step-circle inactive';
+      step3.className = 'step-circle inactive';
+      step1Label.className = 'step-label';
+      step2Label.className = 'step-label';
+      step3Label.className = 'step-label';
+      connectors.forEach(c => c.classList.remove('active'));
+      
+      // Update based on current state
+      if (currentImage) {
+        step1.className = 'step-circle completed';
+        step1Label.className = 'step-label active';
+        connectors[0].classList.add('active');
         
-        await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+        step2.className = 'step-circle active';
+        step2Label.className = 'step-label active';
+        connectors[1].classList.add('active');
         
-        hideLoading();
-        console.log('✅ Model wajah berhasil dimuat');
-      } catch (error) {
-        hideLoading();
-        console.error('❌ Gagal memuat model wajah:', error);
-        alert('Gagal memuat model wajah. Periksa konsol untuk detail.');
+        step3.className = 'step-circle inactive';
+        step3Label.className = 'step-label';
+      }
+      
+      if (isBlurApplied) {
+        step2.className = 'step-circle completed';
+        step3.className = 'step-circle active';
+        step3Label.className = 'step-label active';
       }
     }
 
-    // === Image Management Functions ===
+    // === Image Management ===
     function createImagePreview(image, index) {
       const previewContainer = document.getElementById('imagePreviewContainer');
       const preview = document.createElement('img');
@@ -1513,6 +723,11 @@
         switchImage(parseInt(this.dataset.index));
       });
       
+      preview.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        switchImage(parseInt(this.dataset.index));
+      });
+      
       previewContainer.appendChild(preview);
     }
 
@@ -1521,37 +736,63 @@
         currentImageIndex = index;
         currentImage = images[index].image;
         
-        // Update active state in preview
+        // Update preview selection
         document.querySelectorAll('.image-preview').forEach((preview, i) => {
           preview.classList.toggle('active', i === index);
         });
         
-        // Draw selected image to canvas
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        canvas.width = currentImage.width;
-        canvas.height = currentImage.height;
-        ctx.drawImage(currentImage, 0, 0);
+        // Update canvas
+        drawCurrentImage();
         
         // Load history for this image
         history = images[index].history || [];
         historyIndex = images[index].historyIndex || -1;
         
-        // Update image info
+        // Update UI
         updateImageInfo();
-        
-        // Clear watermarks for new image
-        clearWatermarks();
-        
-        // Reset process state
-        isBlurApplied = images[index].blurApplied || false;
-        isWatermarkApplied = false;
-        
-        // Update process steps
+        updateImageCounter();
+        updateNavigationButtons();
         updateProcessSteps();
         
-        // Update scale info
-        updateScaleInfo();
+        // Show/hide touch hint
+        const touchHint = document.getElementById('touchHint');
+        if (detectedFaces.length > 0) {
+          touchHint.classList.remove('hidden');
+        } else {
+          touchHint.classList.add('hidden');
+        }
+      }
+    }
+
+    function drawCurrentImage() {
+      if (!currentImage) return;
+      
+      const canvas = document.getElementById('canvas');
+      const container = document.querySelector('.canvas-container');
+      
+      // Calculate dimensions to fit container while maintaining aspect ratio
+      const containerWidth = container.clientWidth - 40; // Account for padding
+      const containerHeight = Math.min(containerWidth * 1.2, window.innerHeight * 0.5);
+      
+      const scale = Math.min(
+        containerWidth / currentImage.width,
+        containerHeight / currentImage.height
+      );
+      
+      canvas.width = currentImage.width * scale;
+      canvas.height = currentImage.height * scale;
+      
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+      
+      // If there's saved canvas data for this image, restore it
+      if (images[currentImageIndex].canvasData) {
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = images[currentImageIndex].canvasData;
       }
     }
 
@@ -1560,12 +801,16 @@
       const imageDimensions = document.getElementById('imageDimensions');
       const orientationIcon = document.getElementById('orientationIcon');
       const orientationText = document.getElementById('orientationText');
+      const currentImageNum = document.getElementById('currentImageNum');
+      const totalImages = document.getElementById('totalImages');
       
       if (currentImage) {
         imageInfo.classList.remove('hidden');
-        imageDimensions.textContent = `${currentImage.width} x ${currentImage.height}`;
+        imageDimensions.textContent = `${currentImage.width} × ${currentImage.height}`;
+        currentImageNum.textContent = currentImageIndex + 1;
+        totalImages.textContent = images.length;
         
-        const orientation = getImageOrientation(currentImage.width, currentImage.height);
+        const orientation = currentImage.width >= currentImage.height ? 'landscape' : 'portrait';
         if (orientation === 'landscape') {
           orientationIcon.textContent = 'crop_landscape';
           orientationText.textContent = 'Landscape';
@@ -1578,87 +823,48 @@
       }
     }
 
-    function clearWatermarks() {
-      const container = document.getElementById('watermarkContainer');
-      container.innerHTML = '';
-      watermarks = [];
-      activeWatermarkElement = null;
-      
-      // Add placeholder
-      const placeholder = document.createElement('div');
-      placeholder.className = 'absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600';
-      placeholder.innerHTML = `
-        <div class="text-center">
-          <span class="material-symbols-outlined text-4xl mb-2">photo_filter</span>
-          <p class="text-sm">Klik "Tambah Watermark" untuk menambahkan<br>template ke gambar</p>
-        </div>
-      `;
-      container.appendChild(placeholder);
-      
-      // Reset controls to default
-      const opacitySlider = document.getElementById('watermarkOpacity');
-      const opacityValue = document.getElementById('opacityValue');
-      if (opacitySlider && opacityValue) {
-        opacitySlider.value = 70;
-        opacityValue.textContent = '70%';
-        watermarkOpacity = 70;
-      }
-      
-      const scaleSlider = document.getElementById('watermarkScale');
-      const scaleValue = document.getElementById('scaleValue');
-      if (scaleSlider && scaleValue) {
-        scaleSlider.value = 100;
-        scaleValue.textContent = '100%';
-        watermarkScale = 100;
-      }
-      
-      // Hide scale info
-      const scaleInfo = document.getElementById('scaleInfo');
-      if (scaleInfo) {
-        scaleInfo.classList.add('hidden');
-      }
-      
-      // Reset watermark type to auto
-      currentWatermarkType = 'auto';
-      const landscapePreview = document.getElementById('landscapeWatermarkPreview');
-      const portraitPreview = document.getElementById('portraitWatermarkPreview');
-      if (landscapePreview && portraitPreview) {
-        if (currentImage) {
-          const orientation = getImageOrientation(currentImage.width, currentImage.height);
-          if (orientation === 'landscape') {
-            landscapePreview.classList.add('active');
-            portraitPreview.classList.remove('active');
-          } else {
-            portraitPreview.classList.add('active');
-            landscapePreview.classList.remove('active');
-          }
-        } else {
-          landscapePreview.classList.add('active');
-          portraitPreview.classList.remove('active');
-        }
+    function updateImageCounter() {
+      const imageCounter = document.getElementById('imageCounter');
+      if (images.length > 1) {
+        imageCounter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+        imageCounter.classList.remove('hidden');
+      } else {
+        imageCounter.classList.add('hidden');
       }
     }
 
-    // === Main Initialization ===
-    document.addEventListener('DOMContentLoaded', async () => {
-      initializeBlurTypeSelection();
-      initializeWatermarkControls();
+    function updateNavigationButtons() {
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
       
-      if (typeof faceapi === 'undefined') {
-        console.error('faceapi tidak didefinisikan.');
-        alert('Pustaka face-api.js gagal dimuat.');
-        return;
+      if (currentImageIndex === 0) {
+        prevBtn.style.opacity = '0.5';
+        prevBtn.disabled = true;
+      } else {
+        prevBtn.style.opacity = '1';
+        prevBtn.disabled = false;
       }
       
-      await loadFaceModels();
-      
-      const imageUpload = document.getElementById('imageUpload');
-      const previewContainer = document.getElementById('imagePreviewContainer');
-      
-      if (imageUpload) {
-        imageUpload.addEventListener('change', handleMultipleImageUpload);
+      if (currentImageIndex === images.length - 1) {
+        nextBtn.style.opacity = '0.5';
+        nextBtn.disabled = true;
+      } else {
+        nextBtn.style.opacity = '1';
+        nextBtn.disabled = false;
       }
-    });
+    }
+
+    function nextImage() {
+      if (currentImageIndex < images.length - 1) {
+        switchImage(currentImageIndex + 1);
+      }
+    }
+
+    function prevImage() {
+      if (currentImageIndex > 0) {
+        switchImage(currentImageIndex - 1);
+      }
+    }
 
     // === Handle Multiple Image Upload ===
     async function handleMultipleImageUpload(event) {
@@ -1683,7 +889,7 @@
             history: [],
             historyIndex: -1,
             blurApplied: false,
-            watermarks: []
+            canvasData: null
           });
           
           createImagePreview(images[i], i);
@@ -1691,6 +897,12 @@
         
         // Switch to first image
         switchImage(0);
+        
+        // Auto-detect faces in first image
+        setTimeout(() => {
+          detectFaces();
+        }, 500);
+        
         hideLoading();
         
       } catch (error) {
@@ -1700,206 +912,352 @@
       }
     }
 
-    // === Function to apply different blur types ===
+    // === Face Detection ===
+    async function detectFaces() {
+      if (!currentImage || isProcessing) return;
+      
+      try {
+        detectedFaces = await faceapi.detectAllFaces(currentImage).withFaceLandmarks();
+        
+        // Remove existing face markers
+        document.querySelectorAll('.face-marker').forEach(marker => marker.remove());
+        
+        // Add face markers if faces detected
+        if (detectedFaces.length > 0) {
+          const canvas = document.getElementById('canvas');
+          const container = document.querySelector('.canvas-container');
+          
+          // Calculate scale
+          const scale = canvas.width / currentImage.width;
+          
+          detectedFaces.forEach(face => {
+            const marker = document.createElement('div');
+            marker.className = 'face-marker';
+            
+            const box = face.detection.box;
+            const x = box.x * scale;
+            const y = box.y * scale;
+            const width = box.width * scale;
+            const height = box.height * scale;
+            
+            marker.style.left = `${x}px`;
+            marker.style.top = `${y}px`;
+            marker.style.width = `${width}px`;
+            marker.style.height = `${height}px`;
+            
+            container.appendChild(marker);
+          });
+          
+          // Show touch hint
+          document.getElementById('touchHint').classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('❌ Gagal mendeteksi wajah:', error);
+      }
+    }
+
+    // === Blur Functions ===
     function applyBlurEffect(ctx, x, y, width, height) {
-      const effectiveWidth = Math.max(1, width);
-      const effectiveHeight = Math.max(1, height);
+      const effectiveWidth = Math.max(10, width);
+      const effectiveHeight = Math.max(10, height);
       
       switch(blurType) {
         case 'gaussian':
           ctx.save();
           ctx.beginPath();
-          ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2 * 1.1, effectiveHeight/2 * 1.3, 0, 0, 2 * Math.PI);
+          ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2, effectiveHeight/2, 0, 0, 2 * Math.PI);
           ctx.clip();
           ctx.filter = `blur(${blurIntensity}px)`;
-          ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
+          ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height, 0, 0, ctx.canvas.width, ctx.canvas.height);
           ctx.restore();
           break;
           
         case 'pixelate':
-          const pixelSize = Math.max(1, Math.floor(blurIntensity / 2));
-          const smallCanvas = document.createElement('canvas');
-          const smallCtx = smallCanvas.getContext('2d');
+          const pixelSize = Math.max(2, Math.floor(blurIntensity / 2));
+          const tempCanvas = document.createElement('canvas');
+          const tempCtx = tempCanvas.getContext('2d');
           
-          smallCanvas.width = Math.ceil(effectiveWidth / pixelSize);
-          smallCanvas.height = Math.ceil(effectiveHeight / pixelSize);
-          smallCtx.drawImage(currentImage, x, y, effectiveWidth, effectiveHeight, 0, 0, smallCanvas.width, smallCanvas.height);
+          tempCanvas.width = Math.ceil(effectiveWidth / pixelSize);
+          tempCanvas.height = Math.ceil(effectiveHeight / pixelSize);
           
+          // Draw the face area to temp canvas
+          tempCtx.drawImage(ctx.canvas, x, y, effectiveWidth, effectiveHeight, 0, 0, tempCanvas.width, tempCanvas.height);
+          
+          // Draw pixelated version back
           ctx.save();
-          ctx.beginPath();
-          ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2 * 1.1, effectiveHeight/2 * 1.3, 0, 0, 2 * Math.PI);
-          ctx.clip();
           ctx.imageSmoothingEnabled = false;
-          ctx.drawImage(smallCanvas, 0, 0, smallCanvas.width, smallCanvas.height, x, y, effectiveWidth, effectiveHeight);
+          ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width, tempCanvas.height, x, y, effectiveWidth, effectiveHeight);
           ctx.restore();
           break;
           
         case 'blackBar':
           ctx.save();
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
           ctx.beginPath();
-          ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2 * 1.1, effectiveHeight/2 * 1.3, 0, 0, 2 * Math.PI);
-          ctx.clip();
-          ctx.fillStyle = 'black';
-          ctx.fillRect(x, y, effectiveWidth, effectiveHeight);
+          ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2, effectiveHeight/2, 0, 0, 2 * Math.PI);
+          ctx.fill();
           ctx.restore();
           break;
       }
     }
 
     async function autoBlur() {
-      if (!currentImage) return alert('Muat naik gambar dulu.');
+      if (!currentImage) {
+        alert('Upload gambar terlebih dahulu.');
+        return;
+      }
+      
+      if (isProcessing) return;
+      isProcessing = true;
       
       showLoading("Mendeteksi dan mengaburkan wajah...");
       
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(currentImage, 0, 0);
-      
       try {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        // Remove face markers
+        document.querySelectorAll('.face-marker').forEach(marker => marker.remove());
+        
+        // Detect faces
         const detections = await faceapi.detectAllFaces(currentImage).withFaceLandmarks();
         
         if (detections.length === 0) {
+          alert('Tidak ada wajah yang terdeteksi.');
           hideLoading();
-          alert('Tidak ada wajah yang terdeteksi dalam gambar.');
+          isProcessing = false;
           return;
         }
         
+        // Calculate scale
+        const scale = canvas.width / currentImage.width;
+        
+        // Apply blur to each face
         detections.forEach(detection => {
           const box = detection.detection.box;
-          applyBlurEffect(ctx, box.x, box.y, box.width, box.height);
+          const x = box.x * scale;
+          const y = box.y * scale;
+          const width = box.width * scale;
+          const height = box.height * scale;
+          
+          applyBlurEffect(ctx, x, y, width, height);
         });
         
         saveState();
         isBlurApplied = true;
         images[currentImageIndex].blurApplied = true;
         
+        // Hide touch hint
+        document.getElementById('touchHint').classList.add('hidden');
+        
         updateProcessSteps();
         hideLoading();
+        isProcessing = false;
+        
+        alert(`Berhasil mengaburkan ${detections.length} wajah!`);
+        
       } catch (error) {
         hideLoading();
-        console.error('❌ Gagal kesan wajah:', error);
-        alert('Gagal memproses gambar. Pastikan model AI telah dimuat dengan benar.');
+        isProcessing = false;
+        console.error('❌ Gagal memproses gambar:', error);
+        alert('Gagal memproses gambar. Coba lagi.');
       }
     }
 
     // === Process All Images ===
     async function processAllImages() {
-      if (images.length === 0) return alert('Muat naik gambar dulu.');
+      if (images.length === 0) {
+        alert('Upload gambar terlebih dahulu.');
+        return;
+      }
       
+      if (isProcessing) return;
+      isProcessing = true;
+      
+      const originalIndex = currentImageIndex;
       showLoading(`Memproses ${images.length} gambar...`);
       
       try {
+        let totalFaces = 0;
+        
         for (let i = 0; i < images.length; i++) {
-          // Switch to image
-          switchImage(i);
-          
-          // Process current image
-          const canvas = document.getElementById('canvas');
-          const ctx = canvas.getContext('2d', { willReadFrequently: true });
-          ctx.drawImage(currentImage, 0, 0);
-          
-          // Detect faces
-          const detections = await faceapi.detectAllFaces(currentImage).withFaceLandmarks();
-          
-          // Apply blur to detected faces
-          detections.forEach(detection => {
-            const box = detection.detection.box;
-            applyBlurEffect(ctx, box.x, box.y, box.width, box.height);
-          });
-          
-          // Save processed image data
-          images[i].processedCanvas = canvas.toDataURL();
-          images[i].blurApplied = true;
-          
-          // Update preview with processed image
-          const preview = document.querySelector(`.image-preview[data-index="${i}"]`);
-          if (preview) {
-            preview.src = images[i].processedCanvas;
-          }
-          
           // Update loading text
           document.getElementById('loadingText').textContent = 
             `Memproses gambar ${i + 1} dari ${images.length}...`;
+          
+          // Switch to image
+          switchImage(i);
+          
+          // Detect faces
+          const detections = await faceapi.detectAllFaces(images[i].image).withFaceLandmarks();
+          
+          if (detections.length > 0) {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            
+            // Calculate scale
+            const scale = canvas.width / images[i].image.width;
+            
+            // Apply blur to each face
+            detections.forEach(detection => {
+              const box = detection.detection.box;
+              const x = box.x * scale;
+              const y = box.y * scale;
+              const width = box.width * scale;
+              const height = box.height * scale;
+              
+              applyBlurEffect(ctx, x, y, width, height);
+            });
+            
+            totalFaces += detections.length;
+            
+            // Save canvas data
+            images[i].canvasData = canvas.toDataURL();
+            images[i].blurApplied = true;
+            images[i].history = [canvas.toDataURL()];
+            images[i].historyIndex = 0;
+          }
         }
         
-        // Switch back to first image
-        switchImage(0);
+        // Switch back to original image
+        switchImage(originalIndex);
         isBlurApplied = true;
         
         updateProcessSteps();
         hideLoading();
-        alert(`Berhasil memproses ${images.length} gambar!`);
+        isProcessing = false;
+        
+        alert(`Selesai! Berhasil mengaburkan ${totalFaces} wajah di ${images.length} gambar.`);
         
       } catch (error) {
         hideLoading();
+        isProcessing = false;
         console.error('❌ Gagal memproses semua gambar:', error);
-        alert('Gagal memproses beberapa gambar.');
+        alert('Gagal memproses beberapa gambar. Coba lagi.');
       }
     }
 
-    // === Manual blur with click ===
-    const canvas = document.getElementById('canvas');
-    if (canvas) {
-      canvas.addEventListener('click', (event) => {
-        if (!currentImage) return alert('Muat naik gambar dahulu.');
+    // === Manual Blur with Touch ===
+    function setupCanvasTouch() {
+      const canvas = document.getElementById('canvas');
+      let isTouching = false;
+      let touchStartTime;
+      
+      // Touch events for mobile
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (isProcessing || !currentImage) return;
         
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const clickX = (event.clientX - rect.left) * scaleX;
-        const clickY = (event.clientY - rect.top) * scaleY;
+        isTouching = true;
+        touchStartTime = Date.now();
         
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const touch = e.touches[0];
+        handleCanvasClick(touch.clientX, touch.clientY);
+      }, { passive: false });
+      
+      canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        isTouching = false;
         
-        const blurWidth = Math.max(1, manualBlurSize);
-        const blurHeight = Math.max(1, manualBlurSize * 1.3);
+        // Long press for continuous blur
+        if (Date.now() - touchStartTime > 300) {
+          // Add visual feedback
+          canvas.style.transform = 'scale(1)';
+        }
+      }, { passive: false });
+      
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (!isTouching || isProcessing || !currentImage) return;
         
-        applyBlurEffect(ctx, clickX - blurWidth/2, clickY - blurHeight/2, blurWidth, blurHeight);
-        
-        saveState();
-        isBlurApplied = true;
-        images[currentImageIndex].blurApplied = true;
-        
-        updateProcessSteps();
+        const touch = e.touches[0];
+        handleCanvasClick(touch.clientX, touch.clientY);
+      }, { passive: false });
+      
+      // Click event for desktop
+      canvas.addEventListener('click', (e) => {
+        if (isProcessing || !currentImage) return;
+        handleCanvasClick(e.clientX, e.clientY);
       });
     }
 
+    function handleCanvasClick(clientX, clientY) {
+      const canvas = document.getElementById('canvas');
+      const rect = canvas.getBoundingClientRect();
+      
+      // Calculate click position relative to canvas
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      
+      // Check if click is within canvas bounds
+      if (x < 0 || x > canvas.width || y < 0 || y > canvas.height) return;
+      
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      
+      // Calculate blur area size (scaled for canvas)
+      const scale = canvas.width / currentImage.width;
+      const blurWidth = manualBlurSize * scale;
+      const blurHeight = blurWidth; // Square area for simplicity
+      
+      // Apply blur at click position
+      applyBlurEffect(ctx, x - blurWidth/2, y - blurHeight/2, blurWidth, blurHeight);
+      
+      saveState();
+      isBlurApplied = true;
+      images[currentImageIndex].blurApplied = true;
+      
+      updateProcessSteps();
+    }
+
+    // === History Management ===
     function saveState() {
       const canvas = document.getElementById('canvas');
+      
+      // Trim history if needed
       if (historyIndex < history.length - 1) {
         history = history.slice(0, historyIndex + 1);
       }
+      
+      // Save current canvas state
       history.push(canvas.toDataURL());
       historyIndex++;
       
-      // Save history to current image
+      // Save to image data
       if (images[currentImageIndex]) {
         images[currentImageIndex].history = [...history];
         images[currentImageIndex].historyIndex = historyIndex;
+        images[currentImageIndex].canvasData = canvas.toDataURL();
+      }
+      
+      // Limit history to 20 states
+      if (history.length > 20) {
+        history.shift();
+        historyIndex--;
       }
     }
 
     function resetImage() {
-      if (!currentImage) return alert('Tidak ada gambar.');
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(currentImage, 0, 0);
-      
-      history = [];
-      historyIndex = -1;
-      isBlurApplied = false;
-      isWatermarkApplied = false;
-      
-      // Update image data
-      if (images[currentImageIndex]) {
-        images[currentImageIndex].history = [];
-        images[currentImageIndex].historyIndex = -1;
-        images[currentImageIndex].blurApplied = false;
+      if (!currentImage) {
+        alert('Tidak ada gambar yang dipilih.');
+        return;
       }
       
-      saveState();
-      updateProcessSteps();
+      if (confirm('Reset gambar ini ke keadaan semula?')) {
+        drawCurrentImage();
+        
+        history = [];
+        historyIndex = -1;
+        isBlurApplied = false;
+        images[currentImageIndex].blurApplied = false;
+        images[currentImageIndex].canvasData = null;
+        
+        // Redetect faces
+        setTimeout(() => {
+          detectFaces();
+        }, 300);
+        
+        updateProcessSteps();
+      }
     }
 
     function undo() {
@@ -1907,42 +1265,39 @@
         historyIndex--;
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const image = new Image();
-        image.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(image, 0, 0);
-        };
-        image.src = history[historyIndex];
+        const img = new Image();
         
-        // Update image data
-        if (images[currentImageIndex]) {
-          images[currentImageIndex].historyIndex = historyIndex;
-        }
-      } else alert('Tidak ada undo.');
+        img.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          // Update image data
+          if (images[currentImageIndex]) {
+            images[currentImageIndex].historyIndex = historyIndex;
+            images[currentImageIndex].canvasData = canvas.toDataURL();
+          }
+          
+          if (historyIndex === 0) {
+            isBlurApplied = false;
+            images[currentImageIndex].blurApplied = false;
+          }
+          
+          updateProcessSteps();
+        };
+        
+        img.src = history[historyIndex];
+      } else {
+        alert('Tidak ada tindakan yang bisa di-undo.');
+      }
     }
 
-    function redo() {
-      if (historyIndex < history.length - 1) {
-        historyIndex++;
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const image = new Image();
-        image.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(image, 0, 0);
-        };
-        image.src = history[historyIndex];
-        
-        // Update image data
-        if (images[currentImageIndex]) {
-          images[currentImageIndex].historyIndex = historyIndex;
-        }
-      } else alert('Tidak ada redo.');
-    }
-
+    // === Download Functions ===
     function downloadImage() {
       const canvas = document.getElementById('canvas');
-      if (!canvas.width || !canvas.height) return alert('Tidak ada gambar.');
+      if (!canvas.width || !canvas.height) {
+        alert('Tidak ada gambar untuk diunduh.');
+        return;
+      }
       
       const link = document.createElement('a');
       link.download = `blurred_image_${currentImageIndex + 1}.png`;
@@ -1951,49 +1306,171 @@
     }
 
     function downloadAllImages() {
-      if (images.length === 0) return alert('Tidak ada gambar.');
+      if (images.length === 0) {
+        alert('Tidak ada gambar untuk diunduh.');
+        return;
+      }
       
       showLoading(`Menyiapkan ${images.length} gambar untuk diunduh...`);
       
-      // Create a zip file
+      // Create zip file
       const zip = new JSZip();
+      let processedCount = 0;
       
-      // Process all images
       images.forEach((img, index) => {
-        if (img.processedCanvas) {
-          // Use processed canvas if available
-          const base64Data = img.processedCanvas.split(',')[1];
-          zip.file(`blurred_image_${index + 1}.png`, base64Data, {base64: true});
-        } else if (img.image) {
-          // Create canvas for unprocessed images
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = img.image.width;
-          tempCanvas.height = img.image.height;
-          const tempCtx = tempCanvas.getContext('2d');
-          tempCtx.drawImage(img.image, 0, 0);
-          
+        // Create temporary canvas for each image
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // Set canvas size to original image size
+        tempCanvas.width = img.image.width;
+        tempCanvas.height = img.image.height;
+        
+        // Draw original image
+        tempCtx.drawImage(img.image, 0, 0);
+        
+        // If image has blur applied, apply it to temp canvas
+        if (img.blurApplied && img.canvasData) {
+          const blurredImg = new Image();
+          blurredImg.onload = () => {
+            // Clear and redraw with blur
+            tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.drawImage(img.image, 0, 0);
+            
+            // Apply blur from canvas data
+            const canvasImg = new Image();
+            canvasImg.onload = () => {
+              tempCtx.drawImage(canvasImg, 0, 0, tempCanvas.width, tempCanvas.height);
+              
+              // Add to zip
+              const dataURL = tempCanvas.toDataURL('image/png');
+              const base64Data = dataURL.split(',')[1];
+              zip.file(`blurred_image_${index + 1}.png`, base64Data, {base64: true});
+              
+              processedCount++;
+              checkDownloadReady(processedCount, images.length, zip);
+            };
+            canvasImg.src = img.canvasData;
+          };
+          blurredImg.src = img.canvasData;
+        } else {
+          // Add unprocessed image to zip
           const dataURL = tempCanvas.toDataURL('image/png');
           const base64Data = dataURL.split(',')[1];
           zip.file(`image_${index + 1}.png`, base64Data, {base64: true});
+          
+          processedCount++;
+          checkDownloadReady(processedCount, images.length, zip);
+        }
+      });
+    }
+
+    function checkDownloadReady(processed, total, zip) {
+      if (processed === total) {
+        // Generate and download zip
+        zip.generateAsync({type: "blob"}).then(function(content) {
+          hideLoading();
+          
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(content);
+          link.download = 'blurred_images.zip';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+      }
+    }
+
+    // === Load Face Models ===
+    async function loadFaceModels() {
+      try {
+        showLoading("Memuat model AI...");
+        
+        // Load face detection models
+        const modelPath = 'https://justadudewhohacks.github.io/face-api.js/models';
+        
+        await Promise.all([
+          faceapi.nets.ssdMobilenetv1.loadFromUri(modelPath),
+          faceapi.nets.faceLandmark68Net.loadFromUri(modelPath),
+          faceapi.nets.faceExpressionNet.loadFromUri(modelPath)
+        ]);
+        
+        hideLoading();
+        console.log('✅ Model AI berhasil dimuat');
+      } catch (error) {
+        hideLoading();
+        console.error('❌ Gagal memuat model AI:', error);
+        alert('Gagal memuat model AI. Periksa koneksi internet Anda.');
+      }
+    }
+
+    // === Initialize Sliders ===
+    function initializeSliders() {
+      const blurSlider = document.getElementById("blurIntensity");
+      const blurValue = document.getElementById("blurValue");
+      const manualBlurSlider = document.getElementById("manualBlurSize");
+      const manualBlurValue = document.getElementById("manualBlurValue");
+
+      if (blurSlider && blurValue) {
+        blurSlider.addEventListener("input", function() {
+          blurIntensity = parseInt(this.value);
+          blurValue.textContent = blurIntensity;
+        });
+        
+        // Touch support for slider
+        blurSlider.addEventListener("touchstart", function(e) {
+          e.stopPropagation();
+        });
+      }
+
+      if (manualBlurSlider && manualBlurValue) {
+        manualBlurSlider.addEventListener("input", function() {
+          manualBlurSize = parseInt(this.value);
+          manualBlurValue.textContent = manualBlurSize;
+        });
+        
+        manualBlurSlider.addEventListener("touchstart", function(e) {
+          e.stopPropagation();
+        });
+      }
+    }
+
+    // === Main Initialization ===
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Initialize components
+      initializeBlurTypeSelection();
+      initializeSliders();
+      setupCanvasTouch();
+      
+      // Load face models
+      await loadFaceModels();
+      
+      // Set up file upload
+      const imageUpload = document.getElementById('imageUpload');
+      if (imageUpload) {
+        imageUpload.addEventListener('change', handleMultipleImageUpload);
+      }
+      
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        if (currentImage) {
+          drawCurrentImage();
         }
       });
       
-      // Generate zip file
-      zip.generateAsync({type: "blob"}).then(function(content) {
-        hideLoading();
-        
-        // Create download link
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(content);
-        link.download = 'blurred_images.zip';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      });
-    }
+      // Prevent pull-to-refresh on mobile
+      document.body.addEventListener('touchmove', function(e) {
+        if(e.target.classList.contains('image-preview-container') || 
+           e.target.tagName === 'CANVAS') {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      console.log('✅ Aplikasi siap digunakan');
+    });
   </script>
   
-  <!-- Add JSZip library for zip functionality -->
+  <!-- JSZip library for zip functionality -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
