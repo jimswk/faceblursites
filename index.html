@@ -493,9 +493,9 @@
 
           <div class="mb-6">
             <label for="manualBlurSize" class="block text-sm font-medium mb-2">
-              Ukuran Blur Manual: <span id="manualBlurValue" class="font-bold text-blue-600 dark:text-blue-400">100</span>px
+              Ukuran Blur Manual: <span id="manualBlurValue" class="font-bold text-blue-600 dark:text-blue-400">150</span>px
             </label>
-            <input type="range" id="manualBlurSize" min="50" max="200" value="100" class="range-slider">
+            <input type="range" id="manualBlurSize" min="50" max="400" value="150" class="range-slider">
             <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
               Ukuran area blur saat tap manual pada wajah
             </div>
@@ -559,13 +559,14 @@
     let images = [];
     let currentImageIndex = 0;
     let blurIntensity = 20;
-    let manualBlurSize = 100;
+    let manualBlurSize = 150;
     let blurType = 'gaussian';
     let isBlurApplied = false;
     let detectedFaces = [];
     let isProcessing = false;
-    let originalImages = []; // Simpan salinan asal setiap imej
-    let canvasHistory = []; // Sejarah untuk undo
+    let originalImages = [];
+    let canvasHistory = [];
+    let currentScale = 1; // Faktor penskalaan semasa
 
     // Loading
     function showLoading(text = "Memproses gambar...") {
@@ -661,9 +662,12 @@
       const container = document.querySelector('.canvas-container');
       const maxW = container.clientWidth;
       const maxH = window.innerHeight * 0.6;
-      const scale = Math.min(maxW / currentImage.width, maxH / currentImage.height);
-      canvas.width = currentImage.width * scale;
-      canvas.height = currentImage.height * scale;
+      
+      // Kira faktor penskalaan
+      currentScale = Math.min(maxW / currentImage.width, maxH / currentImage.height);
+      canvas.width = currentImage.width * currentScale;
+      canvas.height = currentImage.height * currentScale;
+      
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
 
@@ -741,7 +745,7 @@
           file, 
           image: img, 
           canvasData: null,
-          history: [originalCanvas.toDataURL('image/png')], // Sejarah dimulai dengan gambar asal
+          history: [originalCanvas.toDataURL('image/png')],
           historyIndex: 0,
           blurApplied: false
         });
@@ -763,16 +767,15 @@
         document.querySelectorAll('.face-marker').forEach(m => m.remove());
         if (detectedFaces.length > 0) {
           const canvas = document.getElementById('canvas');
-          const scale = canvas.width / currentImage.width;
           const container = document.querySelector('.canvas-container');
           detectedFaces.forEach(face => {
             const marker = document.createElement('div');
             marker.className = 'face-marker';
             const box = face.detection.box;
-            marker.style.left = `${box.x * scale}px`;
-            marker.style.top = `${box.y * scale}px`;
-            marker.style.width = `${box.width * scale}px`;
-            marker.style.height = `${box.height * scale}px`;
+            marker.style.left = `${box.x * currentScale}px`;
+            marker.style.top = `${box.y * currentScale}px`;
+            marker.style.width = `${box.width * currentScale}px`;
+            marker.style.height = `${box.height * currentScale}px`;
             container.appendChild(marker);
           });
           document.getElementById('touchHint').classList.remove('hidden');
@@ -784,7 +787,7 @@
       }
     }
 
-    // Apply Blur
+    // Apply Blur pada resolusi sebenar (bukan skrin)
     function applyBlurEffect(ctx, x, y, w, h) {
       const ew = Math.max(10, w);
       const eh = Math.max(10, h);
@@ -792,13 +795,16 @@
       ctx.beginPath();
       ctx.ellipse(x + ew/2, y + eh/2, ew/2, eh/2, 0, 0, 2 * Math.PI);
       ctx.clip();
+      
       switch (blurType) {
         case 'gaussian':
-          ctx.filter = `blur(${blurIntensity}px)`;
+          // Untuk blur Gaussian, gunakan intensiti yang sesuai dengan skala
+          const scaledBlur = blurIntensity * currentScale;
+          ctx.filter = `blur(${scaledBlur}px)`;
           ctx.drawImage(ctx.canvas, 0, 0);
           break;
         case 'pixelate':
-          const ps = Math.max(2, Math.floor(blurIntensity / 2));
+          const ps = Math.max(2, Math.floor(blurIntensity * currentScale / 2));
           const temp = document.createElement('canvas');
           temp.width = Math.ceil(ew / ps);
           temp.height = Math.ceil(eh / ps);
@@ -820,21 +826,17 @@
       const canvas = document.getElementById('canvas');
       const currentState = canvas.toDataURL('image/png');
       
-      // Dapatkan sejarah untuk imej semasa
       const currentHistory = images[currentImageIndex].history || [];
       const currentHistoryIndex = images[currentImageIndex].historyIndex || 0;
       
-      // Potong sejarah jika kita telah undo
       if (currentHistoryIndex < currentHistory.length - 1) {
         images[currentImageIndex].history = currentHistory.slice(0, currentHistoryIndex + 1);
       }
       
-      // Tambah keadaan baru ke sejarah
       images[currentImageIndex].history.push(currentState);
       images[currentImageIndex].historyIndex = images[currentImageIndex].history.length - 1;
       images[currentImageIndex].canvasData = currentState;
       
-      // Simpan juga dalam array global
       canvasHistory[currentImageIndex] = [...images[currentImageIndex].history];
     }
 
@@ -851,7 +853,6 @@
         images[currentImageIndex].canvasData = state;
         images[currentImageIndex].historyIndex = stateIndex;
         
-        // Periksa jika ini adalah keadaan asal
         const isOriginalState = stateIndex === 0;
         isBlurApplied = !isOriginalState;
         images[currentImageIndex].blurApplied = !isOriginalState;
@@ -876,10 +877,9 @@
           isProcessing = false;
           return;
         }
-        const scale = canvas.width / currentImage.width;
         detections.forEach(d => {
           const box = d.detection.box;
-          applyBlurEffect(ctx, box.x * scale, box.y * scale, box.width * scale, box.height * scale);
+          applyBlurEffect(ctx, box.x * currentScale, box.y * currentScale, box.width * currentScale, box.height * currentScale);
         });
         
         saveCurrentState();
@@ -912,14 +912,12 @@
           if (detections.length) {
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            const scale = canvas.width / images[i].image.width;
             detections.forEach(d => {
               const box = d.detection.box;
-              applyBlurEffect(ctx, box.x * scale, box.y * scale, box.width * scale, box.height * scale);
+              applyBlurEffect(ctx, box.x * currentScale, box.y * currentScale, box.width * currentScale, box.height * currentScale);
             });
             totalFaces += detections.length;
             
-            // Simpan keadaan untuk imej ini
             const currentState = canvas.toDataURL('image/png');
             if (!images[i].history) {
               images[i].history = [originalImages[i]];
@@ -943,10 +941,11 @@
       }
     }
 
-    // Canvas Touch/Click for Manual Blur
+    // Canvas Touch/Click for Manual Blur - DIPERBAIKI
     function setupCanvasTouch() {
       const canvas = document.getElementById('canvas');
       let touching = false;
+      
       canvas.addEventListener('touchstart', e => {
         e.preventDefault();
         if (isProcessing || !currentImage) return;
@@ -954,16 +953,19 @@
         const t = e.touches[0];
         handleCanvasClick(t.clientX, t.clientY);
       }, { passive: false });
+      
       canvas.addEventListener('touchmove', e => {
         e.preventDefault();
         if (!touching || isProcessing || !currentImage) return;
         const t = e.touches[0];
         handleCanvasClick(t.clientX, t.clientY);
       }, { passive: false });
+      
       canvas.addEventListener('touchend', e => {
         e.preventDefault();
         touching = false;
       }, { passive: false });
+      
       canvas.addEventListener('click', e => {
         if (isProcessing || !currentImage) return;
         handleCanvasClick(e.clientX, e.clientY);
@@ -973,14 +975,20 @@
     function handleCanvasClick(clientX, clientY) {
       const canvas = document.getElementById('canvas');
       const rect = canvas.getBoundingClientRect();
+      
+      // Kira koordinat relatif pada kanvas
       const x = clientX - rect.left;
       const y = clientY - rect.top;
+      
       if (x < 0 || x > canvas.width || y < 0 || y > canvas.height) return;
+      
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      const scale = canvas.width / currentImage.width;
-      const bw = manualBlurSize * scale;
-      const bh = bw;
-      applyBlurEffect(ctx, x - bw/2, y - bh/2, bw, bh);
+      
+      // Gunakan saiz blur manual yang telah di-scaled
+      // Pada telefon, kita perlu lebih besar kerana faktor penskalaan
+      const scaledBlurSize = manualBlurSize * currentScale * 0.8;
+      
+      applyBlurEffect(ctx, x - scaledBlurSize/2, y - scaledBlurSize/2, scaledBlurSize, scaledBlurSize);
       
       saveCurrentState();
       isBlurApplied = true;
@@ -1007,11 +1015,9 @@
       if (!currentImage) return alert('Tiada gambar.');
       if (!confirm('Reset ke asal? Semua blur akan hilang.')) return;
       
-      // Kembali ke keadaan asal (indeks 0 dalam sejarah)
       if (images[currentImageIndex].history && images[currentImageIndex].history.length > 0) {
         loadStateFromHistory(0);
       } else {
-        // Jika tiada sejarah, lukis semula imej asal
         drawCurrentImage();
         images[currentImageIndex].history = [originalImages[currentImageIndex]];
         images[currentImageIndex].historyIndex = 0;
@@ -1097,14 +1103,25 @@
 
     // Sliders
     function initializeSliders() {
-      document.getElementById('blurIntensity').addEventListener('input', e => {
+      const blurSlider = document.getElementById('blurIntensity');
+      const manualSlider = document.getElementById('manualBlurSize');
+      
+      blurSlider.addEventListener('input', e => {
         blurIntensity = parseInt(e.target.value);
         document.getElementById('blurValue').textContent = blurIntensity;
       });
-      document.getElementById('manualBlurSize').addEventListener('input', e => {
+      
+      manualSlider.addEventListener('input', e => {
         manualBlurSize = parseInt(e.target.value);
         document.getElementById('manualBlurValue').textContent = manualBlurSize;
       });
+      
+      // Untuk telefon bimbit, kita set nilai default yang lebih besar
+      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        manualSlider.value = 200;
+        manualBlurSize = 200;
+        document.getElementById('manualBlurValue').textContent = manualBlurSize;
+      }
     }
 
     // Init
@@ -1124,5 +1141,4 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
-
 
