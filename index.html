@@ -558,14 +558,14 @@
     let currentImage = null;
     let images = [];
     let currentImageIndex = 0;
-    let history = [];
-    let historyIndex = -1;
     let blurIntensity = 20;
     let manualBlurSize = 100;
     let blurType = 'gaussian';
     let isBlurApplied = false;
     let detectedFaces = [];
     let isProcessing = false;
+    let originalImages = []; // Simpan salinan asal setiap imej
+    let canvasHistory = []; // Sejarah untuk undo
 
     // Loading
     function showLoading(text = "Memproses gambar...") {
@@ -647,9 +647,6 @@
       document.querySelectorAll('.image-preview').forEach((p, i) => p.classList.toggle('active', i === index));
 
       drawCurrentImage();
-      history = images[index].history || [];
-      historyIndex = images[index].historyIndex || -1;
-
       updateImageInfo();
       updateImageCounter();
       updateNavigationButtons();
@@ -725,12 +722,34 @@
       document.getElementById('imagePreviewContainer').innerHTML = '';
       document.getElementById('imagePreviewContainer').classList.remove('hidden');
       images = [];
+      originalImages = [];
+      canvasHistory = [];
+      
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const img = await faceapi.bufferToImage(file);
-        images.push({ file, image: img, history: [], historyIndex: -1, blurApplied: false, canvasData: null });
+        
+        // Simpan salinan asal
+        const originalCanvas = document.createElement('canvas');
+        originalCanvas.width = img.width;
+        originalCanvas.height = img.height;
+        const originalCtx = originalCanvas.getContext('2d');
+        originalCtx.drawImage(img, 0, 0);
+        originalImages[i] = originalCanvas.toDataURL('image/png');
+        
+        images.push({
+          file, 
+          image: img, 
+          canvasData: null,
+          history: [originalCanvas.toDataURL('image/png')], // Sejarah dimulai dengan gambar asal
+          historyIndex: 0,
+          blurApplied: false
+        });
+        
         createImagePreview(images[i], i);
       }
+      
+      canvasHistory = images.map(img => [...img.history]);
       switchImage(0);
       setTimeout(detectFaces, 500);
       hideLoading();
@@ -796,6 +815,51 @@
       ctx.restore();
     }
 
+    // Fungsi untuk menyimpan keadaan semasa ke sejarah
+    function saveCurrentState() {
+      const canvas = document.getElementById('canvas');
+      const currentState = canvas.toDataURL('image/png');
+      
+      // Dapatkan sejarah untuk imej semasa
+      const currentHistory = images[currentImageIndex].history || [];
+      const currentHistoryIndex = images[currentImageIndex].historyIndex || 0;
+      
+      // Potong sejarah jika kita telah undo
+      if (currentHistoryIndex < currentHistory.length - 1) {
+        images[currentImageIndex].history = currentHistory.slice(0, currentHistoryIndex + 1);
+      }
+      
+      // Tambah keadaan baru ke sejarah
+      images[currentImageIndex].history.push(currentState);
+      images[currentImageIndex].historyIndex = images[currentImageIndex].history.length - 1;
+      images[currentImageIndex].canvasData = currentState;
+      
+      // Simpan juga dalam array global
+      canvasHistory[currentImageIndex] = [...images[currentImageIndex].history];
+    }
+
+    // Fungsi untuk memuatkan keadaan dari sejarah
+    function loadStateFromHistory(stateIndex) {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const state = images[currentImageIndex].history[stateIndex];
+      
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        images[currentImageIndex].canvasData = state;
+        images[currentImageIndex].historyIndex = stateIndex;
+        
+        // Periksa jika ini adalah keadaan asal
+        const isOriginalState = stateIndex === 0;
+        isBlurApplied = !isOriginalState;
+        images[currentImageIndex].blurApplied = !isOriginalState;
+        updateProcessSteps();
+      };
+      img.src = state;
+    }
+
     async function autoBlur() {
       if (!currentImage) return alert('Upload gambar terlebih dahulu.');
       if (isProcessing) return;
@@ -817,7 +881,8 @@
           const box = d.detection.box;
           applyBlurEffect(ctx, box.x * scale, box.y * scale, box.width * scale, box.height * scale);
         });
-        saveState();
+        
+        saveCurrentState();
         isBlurApplied = true;
         images[currentImageIndex].blurApplied = true;
         document.getElementById('touchHint').classList.add('hidden');
@@ -853,10 +918,16 @@
               applyBlurEffect(ctx, box.x * scale, box.y * scale, box.width * scale, box.height * scale);
             });
             totalFaces += detections.length;
-            images[i].canvasData = canvas.toDataURL();
+            
+            // Simpan keadaan untuk imej ini
+            const currentState = canvas.toDataURL('image/png');
+            if (!images[i].history) {
+              images[i].history = [originalImages[i]];
+            }
+            images[i].history.push(currentState);
+            images[i].historyIndex = images[i].history.length - 1;
+            images[i].canvasData = currentState;
             images[i].blurApplied = true;
-            images[i].history = [canvas.toDataURL()];
-            images[i].historyIndex = 0;
           }
         }
         switchImage(origIndex);
@@ -910,64 +981,47 @@
       const bw = manualBlurSize * scale;
       const bh = bw;
       applyBlurEffect(ctx, x - bw/2, y - bh/2, bw, bh);
-      saveState();
+      
+      saveCurrentState();
       isBlurApplied = true;
       images[currentImageIndex].blurApplied = true;
       updateProcessSteps();
     }
 
-    // History & Undo
-    function saveState() {
-      const canvas = document.getElementById('canvas');
-      const state = canvas.toDataURL('image/png');
-      if (historyIndex < history.length - 1) history = history.slice(0, historyIndex + 1);
-      history.push(state);
-      historyIndex = history.length - 1;
-      images[currentImageIndex].history = [...history];
-      images[currentImageIndex].historyIndex = historyIndex;
-      images[currentImageIndex].canvasData = state;
-      if (history.length > 15) {
-        history.shift();
-        historyIndex--;
-        images[currentImageIndex].history = [...history];
-        images[currentImageIndex].historyIndex = historyIndex;
-      }
-    }
-
+    // Undo Function
     function undo() {
-      if (historyIndex <= 0) return alert('Tiada undo lagi.');
-      historyIndex--;
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      const state = history[historyIndex];
-      const img = new Image();
-      img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        images[currentImageIndex].canvasData = state;
-        images[currentImageIndex].historyIndex = historyIndex;
-        if (historyIndex === 0) {
-          isBlurApplied = false;
-          images[currentImageIndex].blurApplied = false;
-        }
-        updateProcessSteps();
-      };
-      img.src = state;
+      const currentHistory = images[currentImageIndex].history;
+      const currentHistoryIndex = images[currentImageIndex].historyIndex;
+      
+      if (!currentHistory || currentHistoryIndex <= 0) {
+        alert('Tiada undo lagi.');
+        return;
+      }
+      
+      const newIndex = currentHistoryIndex - 1;
+      loadStateFromHistory(newIndex);
     }
 
+    // Reset Function
     function resetImage() {
       if (!currentImage) return alert('Tiada gambar.');
-      if (!confirm('Reset ke asal?')) return;
-      drawCurrentImage();
-      history = [];
-      historyIndex = -1;
-      isBlurApplied = false;
-      images[currentImageIndex].history = [];
-      images[currentImageIndex].historyIndex = -1;
-      images[currentImageIndex].blurApplied = false;
-      images[currentImageIndex].canvasData = null;
+      if (!confirm('Reset ke asal? Semua blur akan hilang.')) return;
+      
+      // Kembali ke keadaan asal (indeks 0 dalam sejarah)
+      if (images[currentImageIndex].history && images[currentImageIndex].history.length > 0) {
+        loadStateFromHistory(0);
+      } else {
+        // Jika tiada sejarah, lukis semula imej asal
+        drawCurrentImage();
+        images[currentImageIndex].history = [originalImages[currentImageIndex]];
+        images[currentImageIndex].historyIndex = 0;
+        images[currentImageIndex].canvasData = null;
+        images[currentImageIndex].blurApplied = false;
+        isBlurApplied = false;
+        updateProcessSteps();
+      }
+      
       setTimeout(detectFaces, 300);
-      updateProcessSteps();
     }
 
     // Download Single
@@ -991,32 +1045,36 @@
         tempCanvas.width = imgObj.image.width;
         tempCanvas.height = imgObj.image.height;
         const tctx = tempCanvas.getContext('2d');
-        tctx.drawImage(imgObj.image, 0, 0);
+        
         if (imgObj.blurApplied && imgObj.canvasData) {
-          const blurred = new Image();
-          blurred.onload = () => {
-            tctx.drawImage(blurred, 0, 0, tempCanvas.width, tempCanvas.height);
+          const img = new Image();
+          img.onload = () => {
+            tctx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
             addToZip(tempCanvas, idx, true);
           };
-          blurred.src = imgObj.canvasData;
+          img.src = imgObj.canvasData;
         } else {
+          tctx.drawImage(imgObj.image, 0, 0);
           addToZip(tempCanvas, idx, false);
         }
       });
 
       function addToZip(canvas, idx, blurred) {
-        const data = canvas.toDataURL('image/png').split(',')[1];
-        zip.file(blurred ? `blurred_${idx+1}.png` : `original_${idx+1}.png`, data, {base64: true});
-        count++;
-        if (count === images.length) {
-          zip.generateAsync({type: 'blob'}).then(blob => {
-            hideLoading();
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'blurred_images.zip';
-            link.click();
-          });
-        }
+        canvas.toBlob(blob => {
+          zip.file(blurred ? `blurred_${idx+1}.png` : `original_${idx+1}.png`, blob);
+          count++;
+          if (count === images.length) {
+            zip.generateAsync({type: 'blob'}).then(content => {
+              hideLoading();
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(content);
+              link.download = 'blurred_images.zip';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            });
+          }
+        }, 'image/png');
       }
     }
 
