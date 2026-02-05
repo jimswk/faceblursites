@@ -6,7 +6,6 @@
   <title>Fast Face Blur UPSKK</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
-
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
@@ -428,15 +427,10 @@
     </div>
 
     <div class="flex flex-col items-center">
-      <!-- File Upload -->
       <input type="file" id="imageUpload" accept="image/*" multiple class="no-select">
-      
-      <!-- Image Preview Container -->
-      <div id="imagePreviewContainer" class="image-preview-container w-full max-w-4xl hidden">
-        <!-- Image previews akan ditambahkan di sini -->
-      </div>
 
-      <!-- Process Steps -->
+      <div id="imagePreviewContainer" class="image-preview-container w-full max-w-4xl hidden"></div>
+
       <div class="process-steps w-full max-w-4xl">
         <div class="step-indicator">
           <div id="step1" class="step-circle active">1</div>
@@ -454,7 +448,6 @@
         </div>
       </div>
 
-      <!-- Canvas Container -->
       <div class="canvas-container w-full max-w-4xl mb-6">
         <div id="imageCounter" class="image-counter hidden">1 / 1</div>
         <div id="touchHint" class="touch-hint hidden">Tap pada wajah untuk blur manual</div>
@@ -469,7 +462,6 @@
         </div>
       </div>
 
-      <!-- Image Info -->
       <div id="imageInfo" class="w-full max-w-4xl mb-6 hidden">
         <div class="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl shadow">
           <div>
@@ -483,9 +475,7 @@
         </div>
       </div>
 
-      <!-- Control Panel -->
       <div class="control-panel w-full max-w-4xl">
-        <!-- Blur Type Selection -->
         <div class="mb-6">
           <label class="block text-sm font-medium mb-3">Jenis Blur:</label>
           <div class="flex gap-2 mb-4">
@@ -493,16 +483,14 @@
             <button id="blurPixelate" class="blur-option px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium">Pixelate</button>
             <button id="blurBlackBar" class="blur-option px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium">Black Bar</button>
           </div>
-          
-          <!-- Blur Intensity -->
+
           <div class="mb-5">
             <label for="blurIntensity" class="block text-sm font-medium mb-2">
               Intensiti Blur: <span id="blurValue" class="font-bold text-blue-600 dark:text-blue-400">20</span>px
             </label>
             <input type="range" id="blurIntensity" min="5" max="50" value="20" class="range-slider">
           </div>
-          
-          <!-- Manual Blur Size -->
+
           <div class="mb-6">
             <label for="manualBlurSize" class="block text-sm font-medium mb-2">
               Ukuran Blur Manual: <span id="manualBlurValue" class="font-bold text-blue-600 dark:text-blue-400">100</span>px
@@ -514,7 +502,6 @@
           </div>
         </div>
 
-        <!-- Action Buttons Grid -->
         <div class="controls-grid">
           <button onclick="autoBlur()" class="action-btn btn-primary">
             <span class="material-symbols-outlined btn-icon">auto_fix_high</span>
@@ -551,17 +538,13 @@
   </main>
 
   <script>
-    // === Dark/Light Toggle ===
+    // Dark/Light Toggle
     const html = document.documentElement;
     const themeToggle = document.getElementById("themeToggle");
     const themeIcon = document.getElementById("themeIcon");
 
     function updateThemeIcon() {
-      if (html.classList.contains("dark")) {
-        themeIcon.textContent = "light_mode";
-      } else {
-        themeIcon.textContent = "dark_mode";
-      }
+      themeIcon.textContent = html.classList.contains("dark") ? "light_mode" : "dark_mode";
     }
 
     themeToggle.addEventListener("click", () => {
@@ -569,15 +552,9 @@
       updateThemeIcon();
     });
 
-    themeToggle.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      html.classList.toggle("dark");
-      updateThemeIcon();
-    });
-
     updateThemeIcon();
 
-    // === Global Variables ===
+    // Global Variables
     let currentImage = null;
     let images = [];
     let currentImageIndex = 0;
@@ -590,20 +567,17 @@
     let detectedFaces = [];
     let isProcessing = false;
 
-    // === Loading Indicator Functions ===
+    // Loading
     function showLoading(text = "Memproses gambar...") {
-      const overlay = document.getElementById("loadingOverlay");
-      const loadingText = document.getElementById("loadingText");
-      loadingText.textContent = text;
-      overlay.style.display = "flex";
+      document.getElementById("loadingOverlay").style.display = "flex";
+      document.getElementById("loadingText").textContent = text;
     }
 
     function hideLoading() {
-      const overlay = document.getElementById("loadingOverlay");
-      overlay.style.display = "none";
+      document.getElementById("loadingOverlay").style.display = "none";
     }
 
-    // === Initialize Blur Type Selection ===
+    // Blur Type Selection
     function initializeBlurTypeSelection() {
       const blurGaussian = document.getElementById('blurGaussian');
       const blurPixelate = document.getElementById('blurPixelate');
@@ -618,267 +592,160 @@
 
     function setBlurType(type) {
       blurType = type;
-      
-      const blurGaussian = document.getElementById('blurGaussian');
-      const blurPixelate = document.getElementById('blurPixelate');
-      const blurBlackBar = document.getElementById('blurBlackBar');
-      
-      [blurGaussian, blurPixelate, blurBlackBar].forEach(button => {
-        button.classList.remove('active');
-        button.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
-      });
-      
-      let activeButton;
-      switch(type) {
-        case 'gaussian':
-          activeButton = blurGaussian;
-          break;
-        case 'pixelate':
-          activeButton = blurPixelate;
-          break;
-        case 'blackBar':
-          activeButton = blurBlackBar;
-          break;
-      }
-      
-      if (activeButton) {
-        activeButton.classList.add('active');
-        activeButton.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
-      }
+      document.querySelectorAll('.blur-option').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`blur${type.charAt(0).toUpperCase() + type.slice(1)}`).classList.add('active');
     }
 
-    // === Update Process Steps ===
+    // Process Steps
     function updateProcessSteps() {
       const step1 = document.getElementById('step1');
       const step2 = document.getElementById('step2');
       const step3 = document.getElementById('step3');
-      const step1Label = document.getElementById('step1Label');
-      const step2Label = document.getElementById('step2Label');
-      const step3Label = document.getElementById('step3Label');
       const connectors = document.querySelectorAll('.step-connector');
-      
-      // Reset all
+
       step1.className = 'step-circle inactive';
       step2.className = 'step-circle inactive';
       step3.className = 'step-circle inactive';
-      step1Label.className = 'step-label';
-      step2Label.className = 'step-label';
-      step3Label.className = 'step-label';
+      document.getElementById('step1Label').className = 'step-label';
+      document.getElementById('step2Label').className = 'step-label';
+      document.getElementById('step3Label').className = 'step-label';
       connectors.forEach(c => c.classList.remove('active'));
-      
+
       if (currentImage) {
         step1.className = 'step-circle completed';
-        step1Label.className = 'step-label active';
+        document.getElementById('step1Label').className = 'step-label active';
         connectors[0].classList.add('active');
-        
         step2.className = 'step-circle active';
-        step2Label.className = 'step-label active';
+        document.getElementById('step2Label').className = 'step-label active';
         connectors[1].classList.add('active');
-        
-        step3.className = 'step-circle inactive';
-        step3Label.className = 'step-label';
       }
-      
+
       if (isBlurApplied) {
         step2.className = 'step-circle completed';
         step3.className = 'step-circle active';
-        step3Label.className = 'step-label active';
+        document.getElementById('step3Label').className = 'step-label active';
       }
     }
 
-    // === Image Management ===
-    function createImagePreview(image, index) {
-      const previewContainer = document.getElementById('imagePreviewContainer');
-      const preview = document.createElement('img');
-      preview.src = URL.createObjectURL(image.file);
-      preview.alt = `Preview ${index + 1}`;
-      preview.className = 'image-preview';
-      preview.dataset.index = index;
-      
-      if (index === currentImageIndex) {
-        preview.classList.add('active');
-      }
-      
-      preview.addEventListener('click', function() {
-        switchImage(parseInt(this.dataset.index));
-      });
-      
-      preview.addEventListener('touchstart', function(e) {
-        e.preventDefault();
-        switchImage(parseInt(this.dataset.index));
-      });
-      
-      previewContainer.appendChild(preview);
+    // Image Preview & Switch
+    function createImagePreview(imageObj, index) {
+      const container = document.getElementById('imagePreviewContainer');
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(imageObj.file);
+      img.className = 'image-preview';
+      img.dataset.index = index;
+      if (index === currentImageIndex) img.classList.add('active');
+      img.addEventListener('click', () => switchImage(parseInt(img.dataset.index)));
+      container.appendChild(img);
     }
 
     function switchImage(index) {
-      if (index >= 0 && index < images.length) {
-        currentImageIndex = index;
-        currentImage = images[index].image;
-        
-        document.querySelectorAll('.image-preview').forEach((preview, i) => {
-          preview.classList.toggle('active', i === index);
-        });
-        
-        drawCurrentImage();
-        
-        history = images[index].history || [];
-        historyIndex = images[index].historyIndex || -1;
-        
-        updateImageInfo();
-        updateImageCounter();
-        updateNavigationButtons();
-        updateProcessSteps();
-        
-        const touchHint = document.getElementById('touchHint');
-        if (detectedFaces.length > 0) {
-          touchHint.classList.remove('hidden');
-        } else {
-          touchHint.classList.add('hidden');
-        }
-      }
+      if (index < 0 || index >= images.length) return;
+      currentImageIndex = index;
+      currentImage = images[index].image;
+
+      document.querySelectorAll('.image-preview').forEach((p, i) => p.classList.toggle('active', i === index));
+
+      drawCurrentImage();
+      history = images[index].history || [];
+      historyIndex = images[index].historyIndex || -1;
+
+      updateImageInfo();
+      updateImageCounter();
+      updateNavigationButtons();
+      updateProcessSteps();
+
+      document.getElementById('touchHint').classList.toggle('hidden', detectedFaces.length === 0);
     }
 
     function drawCurrentImage() {
       if (!currentImage) return;
-      
       const canvas = document.getElementById('canvas');
       const container = document.querySelector('.canvas-container');
-      
-      const maxWidth = container.clientWidth;
-      const maxHeight = Math.min(maxWidth * 1.5, window.innerHeight * 0.6);
-      
-      const scale = Math.min(maxWidth / currentImage.width, maxHeight / currentImage.height);
-      
+      const maxW = container.clientWidth;
+      const maxH = window.innerHeight * 0.6;
+      const scale = Math.min(maxW / currentImage.width, maxH / currentImage.height);
       canvas.width = currentImage.width * scale;
       canvas.height = currentImage.height * scale;
-      
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
-      
+
       if (images[currentImageIndex].canvasData) {
         const img = new Image();
-        img.onload = () => {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        };
+        img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         img.src = images[currentImageIndex].canvasData;
       }
     }
 
     function updateImageInfo() {
-      const imageInfo = document.getElementById('imageInfo');
-      const imageDimensions = document.getElementById('imageDimensions');
-      const orientationIcon = document.getElementById('orientationIcon');
-      const orientationText = document.getElementById('orientationText');
-      const currentImageNum = document.getElementById('currentImageNum');
-      const totalImages = document.getElementById('totalImages');
-      
-      if (currentImage) {
-        imageInfo.classList.remove('hidden');
-        imageDimensions.textContent = `${currentImage.width} × ${currentImage.height}`;
-        currentImageNum.textContent = currentImageIndex + 1;
-        totalImages.textContent = images.length;
-        
-        const orientation = currentImage.width >= currentImage.height ? 'landscape' : 'portrait';
-        orientationIcon.textContent = orientation === 'landscape' ? 'crop_landscape' : 'crop_portrait';
-        orientationText.textContent = orientation === 'landscape' ? 'Landscape' : 'Portrait';
-      } else {
-        imageInfo.classList.add('hidden');
+      const info = document.getElementById('imageInfo');
+      if (!currentImage) {
+        info.classList.add('hidden');
+        return;
       }
+      info.classList.remove('hidden');
+      document.getElementById('imageDimensions').textContent = `${currentImage.width} × ${currentImage.height}`;
+      document.getElementById('currentImageNum').textContent = currentImageIndex + 1;
+      document.getElementById('totalImages').textContent = images.length;
+      const isLandscape = currentImage.width >= currentImage.height;
+      document.getElementById('orientationIcon').textContent = isLandscape ? 'crop_landscape' : 'crop_portrait';
+      document.getElementById('orientationText').textContent = isLandscape ? 'Landscape' : 'Portrait';
     }
 
     function updateImageCounter() {
-      const imageCounter = document.getElementById('imageCounter');
+      const counter = document.getElementById('imageCounter');
       if (images.length > 1) {
-        imageCounter.textContent = `${currentImageIndex + 1} / ${images.length}`;
-        imageCounter.classList.remove('hidden');
+        counter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+        counter.classList.remove('hidden');
       } else {
-        imageCounter.classList.add('hidden');
+        counter.classList.add('hidden');
       }
     }
 
     function updateNavigationButtons() {
-      const prevBtn = document.getElementById('prevBtn');
-      const nextBtn = document.getElementById('nextBtn');
-      
-      prevBtn.disabled = currentImageIndex === 0;
-      prevBtn.style.opacity = currentImageIndex === 0 ? '0.5' : '1';
-      
-      nextBtn.disabled = currentImageIndex === images.length - 1;
-      nextBtn.style.opacity = currentImageIndex === images.length - 1 ? '0.5' : '1';
+      document.getElementById('prevBtn').disabled = currentImageIndex === 0;
+      document.getElementById('prevBtn').style.opacity = currentImageIndex === 0 ? '0.5' : '1';
+      document.getElementById('nextBtn').disabled = currentImageIndex === images.length - 1;
+      document.getElementById('nextBtn').style.opacity = currentImageIndex === images.length - 1 ? '0.5' : '1';
     }
 
     function nextImage() {
-      if (currentImageIndex < images.length - 1) {
-        switchImage(currentImageIndex + 1);
-      }
+      if (currentImageIndex < images.length - 1) switchImage(currentImageIndex + 1);
     }
 
     function prevImage() {
-      if (currentImageIndex > 0) {
-        switchImage(currentImageIndex - 1);
-      }
+      if (currentImageIndex > 0) switchImage(currentImageIndex - 1);
     }
 
-    // === Handle Multiple Image Upload ===
-    async function handleMultipleImageUpload(event) {
-      const files = Array.from(event.target.files);
-      if (files.length === 0) return;
-      
+    // Upload Multiple Images
+    async function handleMultipleImageUpload(e) {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
       showLoading(`Memuat ${files.length} gambar...`);
-      
-      try {
-        const previewContainer = document.getElementById('imagePreviewContainer');
-        previewContainer.innerHTML = '';
-        previewContainer.classList.remove('hidden');
-        
-        images = [];
-        
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const image = await faceapi.bufferToImage(file);
-          images.push({
-            file: file,
-            image: image,
-            history: [],
-            historyIndex: -1,
-            blurApplied: false,
-            canvasData: null
-          });
-          
-          createImagePreview(images[i], i);
-        }
-        
-        switchImage(0);
-        
-        setTimeout(() => {
-          detectFaces();
-        }, 500);
-        
-        hideLoading();
-        
-      } catch (error) {
-        hideLoading();
-        console.error('Gagal memuat gambar:', error);
-        alert('Gagal memuat gambar. Pastikan file adalah gambar yang valid.');
+      document.getElementById('imagePreviewContainer').innerHTML = '';
+      document.getElementById('imagePreviewContainer').classList.remove('hidden');
+      images = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const img = await faceapi.bufferToImage(file);
+        images.push({ file, image: img, history: [], historyIndex: -1, blurApplied: false, canvasData: null });
+        createImagePreview(images[i], i);
       }
+      switchImage(0);
+      setTimeout(detectFaces, 500);
+      hideLoading();
     }
 
-    // === Face Detection ===
+    // Face Detection
     async function detectFaces() {
       if (!currentImage || isProcessing) return;
-      
       try {
         detectedFaces = await faceapi.detectAllFaces(currentImage, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 })).withFaceLandmarks();
-        
-        document.querySelectorAll('.face-marker').forEach(marker => marker.remove());
-        
+        document.querySelectorAll('.face-marker').forEach(m => m.remove());
         if (detectedFaces.length > 0) {
           const canvas = document.getElementById('canvas');
-          const container = document.querySelector('.canvas-container');
           const scale = canvas.width / currentImage.width;
-          
+          const container = document.querySelector('.canvas-container');
           detectedFaces.forEach(face => {
             const marker = document.createElement('div');
             marker.className = 'face-marker';
@@ -889,48 +756,40 @@
             marker.style.height = `${box.height * scale}px`;
             container.appendChild(marker);
           });
-          
           document.getElementById('touchHint').classList.remove('hidden');
         } else {
           document.getElementById('touchHint').classList.add('hidden');
         }
-      } catch (error) {
-        console.error('Gagal mendeteksi wajah:', error);
+      } catch (err) {
+        console.error('Face detection error:', err);
       }
     }
 
-    // === Blur Functions ===
-    function applyBlurEffect(ctx, x, y, width, height) {
-      const effectiveWidth = Math.max(10, width);
-      const effectiveHeight = Math.max(10, height);
-      
+    // Apply Blur
+    function applyBlurEffect(ctx, x, y, w, h) {
+      const ew = Math.max(10, w);
+      const eh = Math.max(10, h);
       ctx.save();
       ctx.beginPath();
-      ctx.ellipse(x + effectiveWidth/2, y + effectiveHeight/2, effectiveWidth/2, effectiveHeight/2, 0, 0, 2 * Math.PI);
+      ctx.ellipse(x + ew/2, y + eh/2, ew/2, eh/2, 0, 0, 2 * Math.PI);
       ctx.clip();
-
-      switch(blurType) {
+      switch (blurType) {
         case 'gaussian':
           ctx.filter = `blur(${blurIntensity}px)`;
-          ctx.drawImage(ctx.canvas, 0, 0, ctx.canvas.width, ctx.canvas.height); // Accumulate dari canvas semasa
+          ctx.drawImage(ctx.canvas, 0, 0);
           break;
-          
         case 'pixelate':
-          const pixelSize = Math.max(2, Math.floor(blurIntensity / 2));
-          const tempCanvas = document.createElement('canvas');
-          const tempCtx = tempCanvas.getContext('2d');
-          
-          tempCanvas.width = Math.ceil(effectiveWidth / pixelSize);
-          tempCanvas.height = Math.ceil(effectiveHeight / pixelSize);
-          
-          tempCtx.drawImage(ctx.canvas, x, y, effectiveWidth, effectiveHeight, 0, 0, tempCanvas.width, tempCanvas.height);
-          
+          const ps = Math.max(2, Math.floor(blurIntensity / 2));
+          const temp = document.createElement('canvas');
+          temp.width = Math.ceil(ew / ps);
+          temp.height = Math.ceil(eh / ps);
+          const tctx = temp.getContext('2d');
+          tctx.drawImage(ctx.canvas, x, y, ew, eh, 0, 0, temp.width, temp.height);
           ctx.imageSmoothingEnabled = false;
-          ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width, tempCanvas.height, x, y, effectiveWidth, effectiveHeight);
+          ctx.drawImage(temp, 0, 0, temp.width, temp.height, x, y, ew, eh);
           break;
-          
         case 'blackBar':
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+          ctx.fillStyle = 'rgba(0,0,0,0.8)';
           ctx.fill();
           break;
       }
@@ -938,156 +797,103 @@
     }
 
     async function autoBlur() {
-      if (!currentImage) {
-        alert('Upload gambar terlebih dahulu.');
-        return;
-      }
-      
+      if (!currentImage) return alert('Upload gambar terlebih dahulu.');
       if (isProcessing) return;
       isProcessing = true;
-      
-      showLoading("Mendeteksi dan mengaburkan wajah...");
-      
+      showLoading("Mengaburkan wajah...");
       try {
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        
-        document.querySelectorAll('.face-marker').forEach(marker => marker.remove());
-        
+        document.querySelectorAll('.face-marker').forEach(m => m.remove());
         const detections = await faceapi.detectAllFaces(currentImage, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 })).withFaceLandmarks();
-        
-        if (detections.length === 0) {
-          alert('Tidak ada wajah yang terdeteksi. Cuba gambar yang lebih jelas atau gunakan blur manual.');
+        if (!detections.length) {
+          alert('Tiada wajah dikesan. Gunakan manual blur.');
           hideLoading();
           isProcessing = false;
           return;
         }
-        
         const scale = canvas.width / currentImage.width;
-        
-        detections.forEach(detection => {
-          const box = detection.detection.box;
-          const x = box.x * scale;
-          const y = box.y * scale;
-          const width = box.width * scale;
-          const height = box.height * scale;
-          
-          applyBlurEffect(ctx, x, y, width, height);
+        detections.forEach(d => {
+          const box = d.detection.box;
+          applyBlurEffect(ctx, box.x * scale, box.y * scale, box.width * scale, box.height * scale);
         });
-        
         saveState();
         isBlurApplied = true;
         images[currentImageIndex].blurApplied = true;
-        
         document.getElementById('touchHint').classList.add('hidden');
-        
         updateProcessSteps();
         hideLoading();
         isProcessing = false;
-        
-        alert(`Berhasil mengaburkan ${detections.length} wajah!`);
-        
-      } catch (error) {
+        alert(`Berjaya blur ${detections.length} wajah!`);
+      } catch (err) {
         hideLoading();
         isProcessing = false;
-        console.error('Gagal memproses gambar:', error);
-        alert('Gagal memproses gambar. Coba lagi.');
+        alert('Gagal proses. Cuba lagi.');
       }
     }
 
-    // === Process All Images ===
     async function processAllImages() {
-      if (images.length === 0) {
-        alert('Upload gambar terlebih dahulu.');
-        return;
-      }
-      
+      if (!images.length) return alert('Upload gambar terlebih dahulu.');
       if (isProcessing) return;
       isProcessing = true;
-      
-      const originalIndex = currentImageIndex;
+      const origIndex = currentImageIndex;
       showLoading(`Memproses ${images.length} gambar...`);
-      
+      let totalFaces = 0;
       try {
-        let totalFaces = 0;
-        
         for (let i = 0; i < images.length; i++) {
-          document.getElementById('loadingText').textContent = `Memproses gambar ${i + 1} dari ${images.length}...`;
-          
+          document.getElementById('loadingText').textContent = `Memproses ${i+1}/${images.length}...`;
           switchImage(i);
-          
           const detections = await faceapi.detectAllFaces(images[i].image, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 })).withFaceLandmarks();
-          
-          if (detections.length > 0) {
+          if (detections.length) {
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            
             const scale = canvas.width / images[i].image.width;
-            
-            detections.forEach(detection => {
-              const box = detection.detection.box;
-              const x = box.x * scale;
-              const y = box.y * scale;
-              const width = box.width * scale;
-              const height = box.height * scale;
-              
-              applyBlurEffect(ctx, x, y, width, height);
+            detections.forEach(d => {
+              const box = d.detection.box;
+              applyBlurEffect(ctx, box.x * scale, box.y * scale, box.width * scale, box.height * scale);
             });
-            
             totalFaces += detections.length;
-            
             images[i].canvasData = canvas.toDataURL();
             images[i].blurApplied = true;
             images[i].history = [canvas.toDataURL()];
             images[i].historyIndex = 0;
           }
         }
-        
-        switchImage(originalIndex);
+        switchImage(origIndex);
         isBlurApplied = true;
-        
         updateProcessSteps();
         hideLoading();
         isProcessing = false;
-        
-        alert(`Selesai! Berhasil mengaburkan ${totalFaces} wajah di ${images.length} gambar.`);
-        
-      } catch (error) {
+        alert(`Selesai! Blur ${totalFaces} wajah di ${images.length} gambar.`);
+      } catch (err) {
         hideLoading();
         isProcessing = false;
-        console.error('Gagal memproses semua gambar:', error);
-        alert('Gagal memproses beberapa gambar. Coba lagi.');
+        alert('Gagal proses semua gambar.');
       }
     }
 
-    // === Manual Blur with Touch ===
+    // Canvas Touch/Click for Manual Blur
     function setupCanvasTouch() {
       const canvas = document.getElementById('canvas');
-      let isTouching = false;
-      
-      canvas.addEventListener('touchstart', (e) => {
+      let touching = false;
+      canvas.addEventListener('touchstart', e => {
         e.preventDefault();
         if (isProcessing || !currentImage) return;
-        
-        isTouching = true;
-        const touch = e.touches[0];
-        handleCanvasClick(touch.clientX, touch.clientY);
+        touching = true;
+        const t = e.touches[0];
+        handleCanvasClick(t.clientX, t.clientY);
       }, { passive: false });
-      
-      canvas.addEventListener('touchmove', (e) => {
+      canvas.addEventListener('touchmove', e => {
         e.preventDefault();
-        if (!isTouching || isProcessing || !currentImage) return;
-        
-        const touch = e.touches[0];
-        handleCanvasClick(touch.clientX, touch.clientY);
+        if (!touching || isProcessing || !currentImage) return;
+        const t = e.touches[0];
+        handleCanvasClick(t.clientX, t.clientY);
       }, { passive: false });
-      
-      canvas.addEventListener('touchend', (e) => {
+      canvas.addEventListener('touchend', e => {
         e.preventDefault();
-        isTouching = false;
+        touching = false;
       }, { passive: false });
-      
-      canvas.addEventListener('click', (e) => {
+      canvas.addEventListener('click', e => {
         if (isProcessing || !currentImage) return;
         handleCanvasClick(e.clientX, e.clientY);
       });
@@ -1096,251 +902,167 @@
     function handleCanvasClick(clientX, clientY) {
       const canvas = document.getElementById('canvas');
       const rect = canvas.getBoundingClientRect();
-      
       const x = clientX - rect.left;
       const y = clientY - rect.top;
-      
       if (x < 0 || x > canvas.width || y < 0 || y > canvas.height) return;
-      
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      
       const scale = canvas.width / currentImage.width;
-      const blurWidth = manualBlurSize * scale;
-      const blurHeight = blurWidth; // Square
-      
-      applyBlurEffect(ctx, x - blurWidth/2, y - blurHeight/2, blurWidth, blurHeight);
-      
+      const bw = manualBlurSize * scale;
+      const bh = bw;
+      applyBlurEffect(ctx, x - bw/2, y - bh/2, bw, bh);
       saveState();
       isBlurApplied = true;
       images[currentImageIndex].blurApplied = true;
-      
       updateProcessSteps();
     }
 
-    // === History Management ===
+    // History & Undo
     function saveState() {
       const canvas = document.getElementById('canvas');
-      
-      if (historyIndex < history.length - 1) {
-        history = history.slice(0, historyIndex + 1);
-      }
-      
-      history.push(canvas.toDataURL());
-      historyIndex++;
-      
-      if (images[currentImageIndex]) {
-        images[currentImageIndex].history = [...history];
-        images[currentImageIndex].historyIndex = historyIndex;
-        images[currentImageIndex].canvasData = canvas.toDataURL();
-      }
-      
-      if (history.length > 20) {
+      const state = canvas.toDataURL('image/png');
+      if (historyIndex < history.length - 1) history = history.slice(0, historyIndex + 1);
+      history.push(state);
+      historyIndex = history.length - 1;
+      images[currentImageIndex].history = [...history];
+      images[currentImageIndex].historyIndex = historyIndex;
+      images[currentImageIndex].canvasData = state;
+      if (history.length > 15) {
         history.shift();
         historyIndex--;
-      }
-    }
-
-    function resetImage() {
-      if (!currentImage) {
-        alert('Tidak ada gambar yang dipilih.');
-        return;
-      }
-      
-      if (confirm('Reset gambar ini ke keadaan semula?')) {
-        drawCurrentImage();
-        
-        history = [];
-        historyIndex = -1;
-        isBlurApplied = false;
-        images[currentImageIndex].blurApplied = false;
-        images[currentImageIndex].canvasData = null;
-        
-        setTimeout(() => {
-          detectFaces();
-        }, 300);
-        
-        updateProcessSteps();
+        images[currentImageIndex].history = [...history];
+        images[currentImageIndex].historyIndex = historyIndex;
       }
     }
 
     function undo() {
-      if (historyIndex > 0) {
-        historyIndex--;
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
-        
-        img.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          
-          if (images[currentImageIndex]) {
-            images[currentImageIndex].historyIndex = historyIndex;
-            images[currentImageIndex].canvasData = canvas.toDataURL();
-          }
-          
-          if (historyIndex === 0) {
-            isBlurApplied = false;
-            images[currentImageIndex].blurApplied = false;
-          }
-          
-          updateProcessSteps();
-        };
-        
-        img.src = history[historyIndex];
-      } else {
-        alert('Tidak ada tindakan yang boleh di-undo.');
-      }
+      if (historyIndex <= 0) return alert('Tiada undo lagi.');
+      historyIndex--;
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const state = history[historyIndex];
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        images[currentImageIndex].canvasData = state;
+        images[currentImageIndex].historyIndex = historyIndex;
+        if (historyIndex === 0) {
+          isBlurApplied = false;
+          images[currentImageIndex].blurApplied = false;
+        }
+        updateProcessSteps();
+      };
+      img.src = state;
     }
 
-    // === Download Functions ===
+    function resetImage() {
+      if (!currentImage) return alert('Tiada gambar.');
+      if (!confirm('Reset ke asal?')) return;
+      drawCurrentImage();
+      history = [];
+      historyIndex = -1;
+      isBlurApplied = false;
+      images[currentImageIndex].history = [];
+      images[currentImageIndex].historyIndex = -1;
+      images[currentImageIndex].blurApplied = false;
+      images[currentImageIndex].canvasData = null;
+      setTimeout(detectFaces, 300);
+      updateProcessSteps();
+    }
+
+    // Download Single
     function downloadImage() {
       const canvas = document.getElementById('canvas');
-      if (!canvas.width || !canvas.height) {
-        alert('Tiada gambar untuk diunduh.');
-        return;
-      }
-      
+      if (!canvas.width) return alert('Tiada gambar.');
       const link = document.createElement('a');
-      link.download = `blurred_image_${currentImageIndex + 1}.png`;
+      link.download = `blurred_${currentImageIndex + 1}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     }
 
+    // Download All (ZIP)
     function downloadAllImages() {
-      if (images.length === 0) {
-        alert('Tiada gambar untuk diunduh.');
-        return;
-      }
-      
-      showLoading(`Menyiapkan ${images.length} gambar untuk diunduh...`);
-      
+      if (!images.length) return alert('Tiada gambar.');
+      showLoading('Menyediakan ZIP...');
       const zip = new JSZip();
-      let processedCount = 0;
-      
-      images.forEach((img, index) => {
+      let count = 0;
+      images.forEach((imgObj, idx) => {
         const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-        
-        tempCanvas.width = img.image.width;
-        tempCanvas.height = img.image.height;
-        
-        tempCtx.drawImage(img.image, 0, 0);
-        
-        if (img.blurApplied && img.canvasData) {
-          const blurredImg = new Image();
-          blurredImg.onload = () => {
-            tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-            tempCtx.drawImage(img.image, 0, 0);
-            const canvasImg = new Image();
-            canvasImg.onload = () => {
-              tempCtx.drawImage(canvasImg, 0, 0, tempCanvas.width, tempCanvas.height);
-              
-              const dataURL = tempCanvas.toDataURL('image/png');
-              const base64Data = dataURL.split(',')[1];
-              zip.file(`blurred_image_${index + 1}.png`, base64Data, {base64: true});
-              
-              processedCount++;
-              checkDownloadReady(processedCount, images.length, zip);
-            };
-            canvasImg.src = img.canvasData;
+        tempCanvas.width = imgObj.image.width;
+        tempCanvas.height = imgObj.image.height;
+        const tctx = tempCanvas.getContext('2d');
+        tctx.drawImage(imgObj.image, 0, 0);
+        if (imgObj.blurApplied && imgObj.canvasData) {
+          const blurred = new Image();
+          blurred.onload = () => {
+            tctx.drawImage(blurred, 0, 0, tempCanvas.width, tempCanvas.height);
+            addToZip(tempCanvas, idx, true);
           };
-          blurredImg.src = img.canvasData;
+          blurred.src = imgObj.canvasData;
         } else {
-          const dataURL = tempCanvas.toDataURL('image/png');
-          const base64Data = dataURL.split(',')[1];
-          zip.file(`image_${index + 1}.png`, base64Data, {base64: true});
-          
-          processedCount++;
-          checkDownloadReady(processedCount, images.length, zip);
+          addToZip(tempCanvas, idx, false);
         }
+      });
+
+      function addToZip(canvas, idx, blurred) {
+        const data = canvas.toDataURL('image/png').split(',')[1];
+        zip.file(blurred ? `blurred_${idx+1}.png` : `original_${idx+1}.png`, data, {base64: true});
+        count++;
+        if (count === images.length) {
+          zip.generateAsync({type: 'blob'}).then(blob => {
+            hideLoading();
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'blurred_images.zip';
+            link.click();
+          });
+        }
+      }
+    }
+
+    // Load Models
+    async function loadFaceModels() {
+      showLoading("Memuat model AI...");
+      try {
+        const path = 'https://justadudewhohacks.github.io/face-api.js/models';
+        await Promise.all([
+          faceapi.nets.ssdMobilenetv1.loadFromUri(path),
+          faceapi.nets.faceLandmark68Net.loadFromUri(path),
+          faceapi.nets.faceExpressionNet.loadFromUri(path)
+        ]);
+        hideLoading();
+      } catch (err) {
+        hideLoading();
+        alert('Gagal muat model AI. Semak internet.');
+      }
+    }
+
+    // Sliders
+    function initializeSliders() {
+      document.getElementById('blurIntensity').addEventListener('input', e => {
+        blurIntensity = parseInt(e.target.value);
+        document.getElementById('blurValue').textContent = blurIntensity;
+      });
+      document.getElementById('manualBlurSize').addEventListener('input', e => {
+        manualBlurSize = parseInt(e.target.value);
+        document.getElementById('manualBlurValue').textContent = manualBlurSize;
       });
     }
 
-    function checkDownloadReady(processed, total, zip) {
-      if (processed === total) {
-        zip.generateAsync({type: "blob"}).then(function(content) {
-          hideLoading();
-          
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(content);
-          link.download = 'blurred_images.zip';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        });
-      }
-    }
-
-    // === Load Face Models ===
-    async function loadFaceModels() {
-      try {
-        showLoading("Memuat model AI...");
-        
-        const modelPath = 'https://justadudewhohacks.github.io/face-api.js/models';
-        
-        await Promise.all([
-          faceapi.nets.ssdMobilenetv1.loadFromUri(modelPath),
-          faceapi.nets.faceLandmark68Net.loadFromUri(modelPath),
-          faceapi.nets.faceExpressionNet.loadFromUri(modelPath)
-        ]);
-        
-        hideLoading();
-        console.log('Model AI dimuat');
-      } catch (error) {
-        hideLoading();
-        console.error('Gagal memuat model AI:', error);
-        alert('Gagal memuat model AI. Periksa koneksi internet.');
-      }
-    }
-
-    // === Initialize Sliders ===
-    function initializeSliders() {
-      const blurSlider = document.getElementById("blurIntensity");
-      const blurValue = document.getElementById("blurValue");
-      const manualBlurSlider = document.getElementById("manualBlurSize");
-      const manualBlurValue = document.getElementById("manualBlurValue");
-
-      if (blurSlider && blurValue) {
-        blurSlider.addEventListener("input", function() {
-          blurIntensity = parseInt(this.value);
-          blurValue.textContent = blurIntensity;
-        });
-      }
-
-      if (manualBlurSlider && manualBlurValue) {
-        manualBlurSlider.addEventListener("input", function() {
-          manualBlurSize = parseInt(this.value);
-          manualBlurValue.textContent = manualBlurSize;
-        });
-      }
-    }
-
-    // === Main Initialization ===
+    // Init
     document.addEventListener('DOMContentLoaded', async () => {
       initializeBlurTypeSelection();
       initializeSliders();
       setupCanvasTouch();
-      
       await loadFaceModels();
-      
-      const imageUpload = document.getElementById('imageUpload');
-      imageUpload.addEventListener('change', handleMultipleImageUpload);
-      
-      window.addEventListener('resize', () => {
-        if (currentImage) drawCurrentImage();
-      });
-      
-      document.body.addEventListener('touchmove', function(e) {
-        if (e.target.classList.contains('image-preview-container') || e.target.tagName === 'CANVAS') {
-          e.preventDefault();
-        }
+      document.getElementById('imageUpload').addEventListener('change', handleMultipleImageUpload);
+      window.addEventListener('resize', () => currentImage && drawCurrentImage());
+      document.body.addEventListener('touchmove', e => {
+        if (e.target.closest('.image-preview-container, canvas')) e.preventDefault();
       }, { passive: false });
-      
-      console.log('Aplikasi siap digunakan');
     });
   </script>
-  
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
